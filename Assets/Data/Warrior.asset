@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a3ef1f6f3ef7a049bf0590fbd8eb3de, type: 3}
+  m_Name: Warrior
+  m_EditorClassIdentifier: Assembly-CSharp::ClassData
+  className: Warrior
+  color: {r: 0.9811321, g: 0.81025624, b: 0, a: 1}
+  weaponPrefab: {fileID: 4334314812708720168, guid: edccbf15fadd9704cb7a2020a492b120, type: 3}
+  weaponPosition: {x: 0, y: 0, z: 0}
+  weaponRotation: {x: 0, y: 0, z: 0}
+  weaponScale: {x: 1, y: 1, z: 1}
+  autoAttack: {fileID: 11400000, guid: 19952c9e9014b6643964be126e35c086, type: 2}
+  skill1: {fileID: 11400000, guid: f7b8650c4312e3a4da5d1d87aa7b1234, type: 2}
+  skill2: {fileID: 11400000, guid: d947b348869610f4aa66956180af4de7, type: 2}
+  landingFinisher: {fileID: 11400000, guid: 2b16b94e0f4587b4c884054e410a9e3c, type: 2}
+  jumpFinisher: {fileID: 11400000, guid: 2cc352ee9123e0241b01339461deed09, type: 2}

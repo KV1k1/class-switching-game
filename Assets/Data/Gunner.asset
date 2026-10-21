@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a3ef1f6f3ef7a049bf0590fbd8eb3de, type: 3}
+  m_Name: Gunner
+  m_EditorClassIdentifier: Assembly-CSharp::ClassData
+  className: Gunner
+  color: {r: 0.377136, g: 0.7075472, b: 0.42669764, a: 1}
+  weaponPrefab: {fileID: 4210100720165400533, guid: 87e308cb23eea97419b3c2623d8bb3fa, type: 3}
+  weaponPosition: {x: -0.1, y: 0, z: 0}
+  weaponRotation: {x: 90, y: 0, z: 0}
+  weaponScale: {x: 1, y: 1, z: 1}
+  autoAttack: {fileID: 11400000, guid: 1f349f6e7198b134a8e6461b9b1089c1, type: 2}
+  skill1: {fileID: 11400000, guid: 4605652c4174db540a51141fcf4305dc, type: 2}
+  skill2: {fileID: 11400000, guid: 7fa73077d7f5faa42b94c9d8518197ee, type: 2}
+  landingFinisher: {fileID: 11400000, guid: 6a235ffef4f7c8244b99a2093245d77c, type: 2}
+  jumpFinisher: {fileID: 0}

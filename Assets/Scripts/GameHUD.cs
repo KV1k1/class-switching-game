@@ -16,7 +16,7 @@ public class GameHUD : MonoBehaviour
         public Outline border;
     }
 
-    FrameUI skill1, skill2, classFrame;
+    FrameUI skill1, skill2, skill3, classFrame;
     Font font;
 
     static readonly Color normalBg = new Color(0f, 0f, 0f, 0.6f);
@@ -38,6 +38,7 @@ public class GameHUD : MonoBehaviour
 
         skill1 = CreateFrame(root, new Vector2(0.5f, 0f), new Vector2(-90, 80), new Vector2(160, 100), "1");
         skill2 = CreateFrame(root, new Vector2(0.5f, 0f), new Vector2(90, 80), new Vector2(160, 100), "2");
+        skill3 = CreateFrame(root, new Vector2(0.5f, 0f), new Vector2(270, 80), new Vector2(160, 100), "3");
         classFrame = CreateFrame(root, new Vector2(0f, 0f), new Vector2(140, 80), new Vector2(220, 100), "Q");
     }
 
@@ -48,9 +49,11 @@ public class GameHUD : MonoBehaviour
         classFrame.main.text = c.className;
         skill1.main.text = Pretty(c.skill1);
         skill2.main.text = Pretty(c.skill2);
+        skill3.main.text = Pretty(c.skill3);
 
         UpdateCooldown(skill1, 0);
         UpdateCooldown(skill2, 1);
+        UpdateCooldown(skill3, 2);
         UpdateComboGlow();
     }
 

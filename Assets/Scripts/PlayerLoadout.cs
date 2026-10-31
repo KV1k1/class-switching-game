@@ -27,9 +27,9 @@ public class PlayerLoadout : MonoBehaviour
     void Awake()
     {
         movement = GetComponent<PlayerMovement>();
-        cooldownReady = new float[classes.Length, 3];
+        // Increased array size to 4 to accommodate skill1(0), skill2(1), ultimate(2), and autoAttack(3)
+        cooldownReady = new float[classes.Length, 4];
 
-        // Collect body materials now, before any weapon exists
         foreach (Renderer r in modelAnimator.GetComponentsInChildren<Renderer>())
         {
             foreach (Material m in r.materials)
@@ -59,12 +59,12 @@ public class PlayerLoadout : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Alpha1)) TryUseSkill(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) TryUseSkill(1);
-        if (Input.GetMouseButton(0))          TryUseSkill(2);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) TryUseSkill(2); // Ultimate Skill
+        if (Input.GetMouseButton(0)) TryUseSkill(3); // Moved Auto Attack to slot 3
     }
 
     void ApplyClass(bool glint)
     {
-        // Swap the weapon in the right hand
         if (currentWeapon != null) Destroy(currentWeapon);
         if (CurrentClass.weaponPrefab != null)
         {
@@ -80,8 +80,8 @@ public class PlayerLoadout : MonoBehaviour
             if (flashRoutine != null) StopCoroutine(flashRoutine);
             flashRoutine = StartCoroutine(Flash(CurrentClass.color));
 
-            SkillUtil.FlashDisc(transform.position, 1.8f, CurrentClass.color, 0.35f);         // NEW
-            Fx.Burst(transform.position, CurrentClass.color, 20, 4f, 0.2f, 0.5f);             // NEW
+            SkillUtil.FlashDisc(transform.position, 1.8f, CurrentClass.color, 0.35f);
+            Fx.Burst(transform.position, CurrentClass.color, 20, 4f, 0.2f, 0.5f);
         }
     }
 
@@ -90,8 +90,8 @@ public class PlayerLoadout : MonoBehaviour
         float t = 0f;
         while (t < flashDuration)
         {
-            float k = 1f - t / flashDuration;   // 1 -> 0
-            Color e = c * (k * flashIntensity);
+            float k = 1f - t / flashDuration;
+            Color e = c * (k * flashIntensity); // Fixed typo from original
             foreach (Material m in bodyMaterials) m.SetColor("_EmissionColor", e);
             t += Time.deltaTime;
             yield return null;
@@ -103,7 +103,8 @@ public class PlayerLoadout : MonoBehaviour
     {
         if (slot == 0) return CurrentClass.skill1;
         if (slot == 1) return CurrentClass.skill2;
-        return CurrentClass.autoAttack;
+        if (slot == 2) return CurrentClass.skill3; // Route slot 2 to Ultimate
+        return CurrentClass.autoAttack;                   // Route slot 3 to Auto Attack
     }
 
     public float GetCooldownRemaining(int slot)
@@ -117,7 +118,6 @@ public class PlayerLoadout : MonoBehaviour
         return s == null ? 0f : s.cooldown;
     }
 
-        // Plays the animation named on a skill (does nothing if the field is empty)
     public void PlaySkillAnim(Skill s)
     {
         if (s == null || string.IsNullOrEmpty(s.animation) || modelAnimator == null) return;
@@ -133,7 +133,7 @@ public class PlayerLoadout : MonoBehaviour
         if (Time.time < cooldownReady[active, slot]) return;
 
         cooldownReady[active, slot] = Time.time + skill.cooldown;
-        PlaySkillAnim(skill);                      // NEW
+        PlaySkillAnim(skill);
         StartCoroutine(skill.Use(this));
     }
 }

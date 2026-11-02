@@ -21,5 +21,6 @@ MonoBehaviour:
   autoAttack: {fileID: 11400000, guid: 19952c9e9014b6643964be126e35c086, type: 2}
   skill1: {fileID: 11400000, guid: f7b8650c4312e3a4da5d1d87aa7b1234, type: 2}
   skill2: {fileID: 11400000, guid: d947b348869610f4aa66956180af4de7, type: 2}
+  skill3: {fileID: 11400000, guid: 04c3b3ba85286394ca52a0d70b170920, type: 2}
   landingFinisher: {fileID: 11400000, guid: 2b16b94e0f4587b4c884054e410a9e3c, type: 2}
   jumpFinisher: {fileID: 11400000, guid: 2cc352ee9123e0241b01339461deed09, type: 2}

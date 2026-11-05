@@ -4,6 +4,7 @@ using UnityEngine;
 public class ClassData : ScriptableObject
 {
     public string className;
+    public Sprite classIcon;
     public Color color = Color.white;   // glint color when switching to this class
 
     [Header("Weapon in hand")]

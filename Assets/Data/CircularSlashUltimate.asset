@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b2f9874ad73d894b92a4d75ff387456, type: 3}
   m_Name: CircularSlashUltimate
   m_EditorClassIdentifier: Assembly-CSharp::CircularSlashUltimate
-  cooldown: 1
+  icon: {fileID: -1129297865, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
+  cooldown: 20
   animation: Attack
   damage: 50
   range: 4

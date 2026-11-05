@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4a9a280098ab6d4d85578bc60778239, type: 3}
   m_Name: GunnerJump
   m_EditorClassIdentifier: Assembly-CSharp::GunnerJumpSkill
+  icon: {fileID: -1605148151, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
   cooldown: 5
   animation: Jump
   distance: 5

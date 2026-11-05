@@ -597,7 +597,7 @@ GameObject:
   - component: {fileID: 738403610806551017}
   m_Layer: 0
   m_Name: Base_mesh_Skin1
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -611,7 +611,7 @@ Transform:
   m_GameObject: {fileID: 2327728332653400791}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalPosition: {x: 0, y: -0.2, z: 0}
   m_LocalScale: {x: 2.5, y: 2.5, z: 2.5}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -672,7 +672,9 @@ MonoBehaviour:
   attackRange: 1.8
   attackDamage: 8
   windup: 0.4
+  recover: 0.5
   attackCooldown: 1.2
+  deathLinger: 2
 --- !u!136 &738403610806551017
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -693,9 +695,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
-  m_Height: 1
+  m_Height: 2
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!1 &2368365274290733054
 GameObject:
   m_ObjectHideFlags: 0
@@ -3073,7 +3075,7 @@ Transform:
   m_GameObject: {fileID: 8205420749300019349}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalPosition: {x: -0, y: 0.803, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

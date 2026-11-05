@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b102247f6fabfc741a61a6336cbbbe2b, type: 3}
   m_Name: BulletBarrage
   m_EditorClassIdentifier: Assembly-CSharp::BulletBarrageSkill
+  icon: {fileID: -5505784301242206033, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
   cooldown: 8
   animation: Shoot
   duration: 2

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Warrior
   m_EditorClassIdentifier: Assembly-CSharp::ClassData
   className: Warrior
+  classIcon: {fileID: 4623519729335281693, guid: f1a5044d2d872b946a537bba5da46e22, type: 3}
   color: {r: 0.9811321, g: 0.81025624, b: 0, a: 1}
   weaponPrefab: {fileID: 4334314812708720168, guid: edccbf15fadd9704cb7a2020a492b120, type: 3}
   weaponPosition: {x: 0, y: 0, z: 0}

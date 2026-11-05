@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77e0d5c3b85df0d4cbc2223eeff1f010, type: 3}
   m_Name: Leap
   m_EditorClassIdentifier: Assembly-CSharp::LeapSkill
+  icon: {fileID: 1514131131, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
   cooldown: 4
   animation: Jump
   distance: 6

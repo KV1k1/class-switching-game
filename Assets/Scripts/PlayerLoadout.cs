@@ -136,4 +136,23 @@ public class PlayerLoadout : MonoBehaviour
         PlaySkillAnim(skill);
         StartCoroutine(skill.Use(this));
     }
+    public void UnlockClass(ClassData newClass)
+    {
+        // Expand the classes array
+        List<ClassData> currentClasses = new List<ClassData>(classes);
+        if (currentClasses.Contains(newClass)) return; // Already unlocked
+        currentClasses.Add(newClass);
+        classes = currentClasses.ToArray();
+
+        // Resize the cooldown array to accommodate the new class layout
+        float[,] newCooldowns = new float[classes.Length, 4];
+        for (int c = 0; c < classes.Length - 1; c++)
+        {
+            for (int s = 0; s < 4; s++)
+            {
+                newCooldowns[c, s] = cooldownReady[c, s];
+            }
+        }
+        cooldownReady = newCooldowns;
+    }
 }

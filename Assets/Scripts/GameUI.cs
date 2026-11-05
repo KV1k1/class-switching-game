@@ -22,6 +22,10 @@ public class GameUI : MonoBehaviour
     Text bossNameText;
     Health bossHealth;
 
+    // Pause menu
+    GameObject pauseScreen;
+    bool isPaused;
+
     void Awake()
     {
         Instance = this;
@@ -84,6 +88,20 @@ public class GameUI : MonoBehaviour
         Stretch(bossNameText.rectTransform);
         bossBar.SetActive(false);
 
+        // Pause Screen
+        pauseScreen = new GameObject("Pause Screen");
+        pauseScreen.transform.SetParent(root, false);
+        Image pauseDim = pauseScreen.AddComponent<Image>();
+        pauseDim.color = new Color(0f, 0f, 0f, 0.85f);
+        Stretch(pauseDim.rectTransform);
+
+        Text pauseTitle = NewText(pauseScreen.transform, "Title", "PAUSED", 90, TextAnchor.MiddleCenter, Color.white);
+        SetBox(pauseTitle.rectTransform, new Vector2(0, 60), new Vector2(800, 150));
+
+        Text pauseSub = NewText(pauseScreen.transform, "Sub", "Press ESC to Resume\nPress BACKSPACE to Quit", 30, TextAnchor.MiddleCenter, Color.gray);
+        SetBox(pauseSub.rectTransform, new Vector2(0, -60), new Vector2(800, 100));
+        pauseScreen.SetActive(false);
+
         // End screen (hidden until needed)
         endScreen = new GameObject("End Screen");
         endScreen.transform.SetParent(root, false);
@@ -112,6 +130,20 @@ public class GameUI : MonoBehaviour
 
     void Update()
     {
+        // Handle Pause Input
+        if (!ended && Input.GetKeyDown(KeyCode.Escape))
+        {
+            isPaused = !isPaused;
+            pauseScreen.SetActive(isPaused);
+            Time.timeScale = isPaused ? 0f : 1f;
+        }
+
+        // Handle Quit while paused
+        if (isPaused && Input.GetKeyDown(KeyCode.Backspace))
+        {
+            Application.Quit();
+        }
+
         float fraction = Mathf.Clamp01(playerHealth.Current / playerHealth.maxHealth);
         healthFill.anchorMax = new Vector2(fraction, 1f);
         healthText.text = "HP  " + Mathf.CeilToInt(playerHealth.Current) + " / " + Mathf.CeilToInt(playerHealth.maxHealth);
@@ -123,7 +155,10 @@ public class GameUI : MonoBehaviour
         flash.color = new Color(1f, 0f, 0f, flashAlpha);
 
         if (ended && Input.GetKeyDown(KeyCode.R))
+        {
+            Time.timeScale = 1f; // Ensure time is reset if restarting
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
     }
 
     public void ShowBossBar(string bossName, Health boss)
@@ -131,6 +166,36 @@ public class GameUI : MonoBehaviour
         bossHealth = boss;
         bossNameText.text = bossName;
         bossBar.SetActive(true);
+    }
+    public void ShowNotification(string message)
+    {
+        // Create a temporary text object on the canvas
+        GameObject notifObj = new GameObject("Notification Text");
+        notifObj.transform.SetParent(healthText.transform.parent.parent, false);
+
+        Text t = notifObj.AddComponent<Text>();
+        t.font = font;
+        t.text = message;
+        t.fontSize = 45;
+        t.alignment = TextAnchor.UpperCenter;
+        t.color = new Color(1f, 0.85f, 0.2f); // Yellow/Gold
+        t.raycastTarget = false;
+
+        // Position it at the top center of the screen
+        RectTransform rt = t.rectTransform;
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0, -100);
+        rt.sizeDelta = new Vector2(800, 200);
+
+        // Add a shadow for better readability
+        Outline shadow = notifObj.AddComponent<Outline>();
+        shadow.effectColor = Color.black;
+        shadow.effectDistance = new Vector2(2, -2);
+
+        // Auto-destroy the message after 4 seconds
+        Destroy(notifObj, 4f);
     }
 
     public void HideBossBar()

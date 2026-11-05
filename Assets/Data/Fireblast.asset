@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea30a043630aaf84fa62dc1f33af003b, type: 3}
+  m_Name: Fireblast
+  m_EditorClassIdentifier: Assembly-CSharp::FireblastSkill
+  icon: {fileID: 1887949623, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
+  cooldown: 1
+  animation: Fireblast
+  fireballPrefab: {fileID: 8101070451172243826, guid: 4737e16aa644d3646b8dc63b9b0513a1, type: 3}
+  projectileSpeed: 15
+  explosionRadius: 4
+  damage: 20

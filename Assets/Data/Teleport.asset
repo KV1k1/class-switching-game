@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e133b8fe4276634c8ec7099a6b407e5, type: 3}
+  m_Name: Teleport
+  m_EditorClassIdentifier: Assembly-CSharp::TeleportSkill
+  icon: {fileID: 304485960, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
+  cooldown: 4
+  animation: Teleport
+  teleportDistance: 5

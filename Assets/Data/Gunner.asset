@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Gunner
   m_EditorClassIdentifier: Assembly-CSharp::ClassData
   className: Gunner
+  classIcon: {fileID: 1906611358, guid: f1a5044d2d872b946a537bba5da46e22, type: 3}
   color: {r: 0.377136, g: 0.7075472, b: 0.42669764, a: 1}
   weaponPrefab: {fileID: 4210100720165400533, guid: 87e308cb23eea97419b3c2623d8bb3fa, type: 3}
   weaponPosition: {x: -0.1, y: 0, z: 0}

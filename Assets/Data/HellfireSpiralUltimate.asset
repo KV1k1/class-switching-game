@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f0ca476fb527684fb448f228b47c32b, type: 3}
   m_Name: HellfireSpiralUltimate
   m_EditorClassIdentifier: Assembly-CSharp::HellfireSpiralUltimate
-  cooldown: 1
+  icon: {fileID: 566000005, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
+  cooldown: 20
   animation: Shoot
   duration: 1
   damage: 15

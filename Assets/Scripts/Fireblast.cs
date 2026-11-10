@@ -2,44 +2,38 @@ using System.Collections;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Skills/Mage/Fireblast")]
-public class FireblastSkill : Skill
+public class Fireblast : Skill
 {
-    public GameObject fireballPrefab; // Attach a prefab with a Rigidbody and the FireballProjectile script below
-    public float projectileSpeed = 15f;
-    public float explosionRadius = 4f;
+    public float speed = 16f;
     public float damage = 20f;
+    public float aoeRadius = 3.5f;
+
+    [Header("Visual Tuning")]
+    public float fireballScale = 0.8f;     // EDIT THIS IN INSPECTOR (e.g., 0.8 = 80% size, 0.5 = half size)
+    public GameObject explosionVfxPrefab; // Drag the explosion VFX specific to Fireblast here!
 
     public override IEnumerator Use(PlayerLoadout user)
     {
-        Vector3 spawnPos = user.transform.position + Vector3.up * 1f + user.transform.forward * 0.8f;
-        GameObject fb = Instantiate(fireballPrefab, spawnPos, user.transform.rotation);
+        if (vfxPrefab != null)
+        {
+            Vector3 spawnPos = user.transform.position + Vector3.up * 1.2f + user.transform.forward * 0.8f;
+            GameObject fireball = Instantiate(vfxPrefab, spawnPos, user.transform.rotation);
 
-        FireballProjectile script = fb.AddComponent<FireballProjectile>();
-        script.Setup(projectileSpeed, explosionRadius, damage, user.gameObject);
+            // 1. Scale ONLY this Fireblast clone
+            fireball.transform.localScale = Vector3.one * fireballScale;
+
+            // 2. Configure VfxProjectile properties for Fireblast
+            VfxProjectile proj = fireball.GetComponent<VfxProjectile>();
+            if (proj != null)
+            {
+                proj.Init(user.gameObject, damage, speed);
+                proj.aoeRadius = aoeRadius;
+                
+                // Override explosion VFX to use Fireblast's dedicated explosion
+                proj.explosionVfxPrefab = explosionVfxPrefab;
+            }
+        }
 
         yield break;
-    }
-}
-
-// Attach this secondary script to your fireball prefab
-public class FireballProjectile : MonoBehaviour
-{
-    float speed, radius, dmg;
-    GameObject caster;
-
-    public void Setup(float s, float r, float d, GameObject c)
-    {
-        speed = s; radius = r; dmg = d; caster = c;
-        Destroy(gameObject, 5f); // Cleanup if it misses
-    }
-
-    void Update() => transform.position += transform.forward * speed * Time.deltaTime;
-
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject == caster || other.isTrigger) return;
-        SkillUtil.DamageSphere(transform.position, radius, dmg, caster); // Explode
-        Fx.Burst(transform.position, Color.red, 15, radius, 0.5f, 0.5f);
-        Destroy(gameObject);
     }
 }

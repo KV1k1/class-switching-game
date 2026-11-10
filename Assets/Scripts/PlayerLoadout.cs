@@ -27,7 +27,6 @@ public class PlayerLoadout : MonoBehaviour
     void Awake()
     {
         movement = GetComponent<PlayerMovement>();
-        // Increased array size to 4 to accommodate skill1(0), skill2(1), ultimate(2), and autoAttack(3)
         cooldownReady = new float[classes.Length, 4];
 
         foreach (Renderer r in modelAnimator.GetComponentsInChildren<Renderer>())
@@ -49,6 +48,7 @@ public class PlayerLoadout : MonoBehaviour
 
     void Update()
     {
+        // Race/Class Swap: Q
         if (Input.GetKeyDown(KeyCode.Q) && Time.time >= nextSwitchTime)
         {
             active = (active + 1) % classes.Length;
@@ -57,10 +57,13 @@ public class PlayerLoadout : MonoBehaviour
             ApplyClass(true);
         }
 
+        // Spells: 1, 2, 3
         if (Input.GetKeyDown(KeyCode.Alpha1)) TryUseSkill(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) TryUseSkill(1);
         if (Input.GetKeyDown(KeyCode.Alpha3)) TryUseSkill(2); // Ultimate Skill
-        if (Input.GetMouseButton(0)) TryUseSkill(3); // Moved Auto Attack to slot 3
+
+        // Auto Attack: Right Click (RMB)
+        if (Input.GetMouseButton(1)) TryUseSkill(3);
     }
 
     void ApplyClass(bool glint)
@@ -91,7 +94,7 @@ public class PlayerLoadout : MonoBehaviour
         while (t < flashDuration)
         {
             float k = 1f - t / flashDuration;
-            Color e = c * (k * flashIntensity); // Fixed typo from original
+            Color e = c * (k * flashIntensity);
             foreach (Material m in bodyMaterials) m.SetColor("_EmissionColor", e);
             t += Time.deltaTime;
             yield return null;
@@ -103,8 +106,8 @@ public class PlayerLoadout : MonoBehaviour
     {
         if (slot == 0) return CurrentClass.skill1;
         if (slot == 1) return CurrentClass.skill2;
-        if (slot == 2) return CurrentClass.skill3; // Route slot 2 to Ultimate
-        return CurrentClass.autoAttack;                   // Route slot 3 to Auto Attack
+        if (slot == 2) return CurrentClass.skill3;
+        return CurrentClass.autoAttack;
     }
 
     public float GetCooldownRemaining(int slot)
@@ -132,19 +135,21 @@ public class PlayerLoadout : MonoBehaviour
         if (skill == null) return;
         if (Time.time < cooldownReady[active, slot]) return;
 
+        // Turn character to face mouse location instantly before executing attack
+        if (movement != null) movement.FaceMouse();
+
         cooldownReady[active, slot] = Time.time + skill.cooldown;
         PlaySkillAnim(skill);
         StartCoroutine(skill.Use(this));
     }
+
     public void UnlockClass(ClassData newClass)
     {
-        // Expand the classes array
         List<ClassData> currentClasses = new List<ClassData>(classes);
-        if (currentClasses.Contains(newClass)) return; // Already unlocked
+        if (currentClasses.Contains(newClass)) return;
         currentClasses.Add(newClass);
         classes = currentClasses.ToArray();
 
-        // Resize the cooldown array to accommodate the new class layout
         float[,] newCooldowns = new float[classes.Length, 4];
         for (int c = 0; c < classes.Length - 1; c++)
         {

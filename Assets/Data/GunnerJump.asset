@@ -15,6 +15,7 @@ MonoBehaviour:
   icon: {fileID: -1605148151, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
   cooldown: 5
   animation: Jump
+  vfxPrefab: {fileID: 4425129568585013132, guid: bbeeb0ddc21369746aaaae5c5c1c09cf, type: 3}
   distance: 5
   height: 2.5
   smokeRadius: 3.5

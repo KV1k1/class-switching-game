@@ -1,24 +1,29 @@
 using System.Collections;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Skills/Double Slash")]
+[CreateAssetMenu(menuName = "Skills/Warrior/Double Slash")]
 public class DoubleSlashSkill : Skill
 {
-    public float damage = 20f;
-    public float range = 3f;
-    public float delayBetweenHits = 0.25f;
+    public float damage = 15f;
+    public float range = 2.5f;
 
     public override IEnumerator Use(PlayerLoadout user)
     {
-        Slash(user.transform, false);
-        yield return new WaitForSeconds(delayBetweenHits);
-        Slash(user.transform, true);   // second arc is mirrored
-    }
+        // 1. SPAWN SLASH VFX
+        if (vfxPrefab != null)
+        {
+            // Spawn slightly in front of the player at chest height
+            Vector3 spawnPos = user.transform.position + Vector3.up * 1.2f + user.transform.forward * 1f;
+            GameObject vfx = Instantiate(vfxPrefab, spawnPos, user.transform.rotation);
+            
+            // Auto-destroy the particle object after its animation finishes
+            Destroy(vfx, 1.5f);
+        }
 
-    void Slash(Transform player, bool mirror)
-    {
-        Vector3 center = player.position + player.forward * (range * 0.5f);
-        SkillUtil.DamageSphere(center, range * 0.7f, damage, player.gameObject);
-        Fx.SlashArc(player, range, new Color(1f, 0.85f, 0.4f), mirror);
+        // 2. DAMAGE LOGIC
+        Vector3 hitCenter = user.transform.position + user.transform.forward * (range * 0.5f) + Vector3.up * 1f;
+        SkillUtil.DamageSphere(hitCenter, range, damage, user.gameObject);
+
+        yield break;
     }
 }

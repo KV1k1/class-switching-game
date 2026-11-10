@@ -15,6 +15,8 @@ MonoBehaviour:
   icon: {fileID: -1129297865, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
   cooldown: 20
   animation: Attack
+  vfxPrefab: {fileID: 8307060409358143758, guid: 8f767d0b23c8e3b4cb2ead5380b1074d, type: 3}
   damage: 50
-  range: 4
+  range: 6
   delayBetweenSpins: 0.3
+  vfxScale: 2.5

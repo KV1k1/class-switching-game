@@ -5,22 +5,24 @@ using UnityEngine;
 public class HellfireSpiralUltimate : Skill
 {
     [Header("Skill Properties")]
-    public float duration = 1f;
-    public float damage = 15f;
-    public float bulletSpeed = 5f;
+    public float duration = 2f;
+    public float damage = 12f;
+    public float bulletSpeed = 14f;
 
     [Header("Spiral Settings")]
-    public float shotsPerSecond = 1f; // How fast EACH stream fires
-    public int streamCount = 2;        // Number of bullet streams (e.g., a 6-point star)
-    public float spinSpeed = 36f;     // How fast the spiral rotates (degrees per second)
-    public Color ultimateColor = new Color(1f, 0.4f, 0f); // Glowing fiery orange
+    public float shotsPerSecond = 10f;
+    public int streamCount = 4;
+    public float spinSpeed = 180f;
+
+    [Header("Visual Tuning")]
+    public float fireballScale = 0.4f; 
+    public GameObject explosionVfxPrefab; // FIXED: Added missing variable declaration
 
     public override IEnumerator Use(PlayerLoadout user)
     {
         PlayerMovement movement = user.GetComponent<PlayerMovement>();
         Transform p = user.transform;
 
-        // Lock the player in place while they channel the ultimate
         movement.Launch(Vector3.zero, 0f);
 
         float interval = 1f / shotsPerSecond;
@@ -29,30 +31,42 @@ public class HellfireSpiralUltimate : Skill
 
         while (elapsed < duration)
         {
-            // Fire a bullet for each of the streams (360 degrees divided by stream count)
             for (int i = 0; i < streamCount; i++)
             {
-                // Space the streams evenly, then add the rotating offset
                 float streamAngle = (360f / streamCount) * i;
                 float finalAngle = streamAngle + currentAngleOffset;
 
-                // Calculate the direction vector for this specific bullet
                 Vector3 dir = Quaternion.Euler(0, finalAngle, 0) * p.forward;
-
-                // Spawn the projectile (adding Vector3.up * 1f if you need to shoot from chest/gun height)
                 Vector3 spawnPos = p.position + (Vector3.up * 1f) + (dir * 0.8f);
-                Projectile.Spawn(spawnPos, dir, bulletSpeed, damage, ultimateColor);
+
+                if (vfxPrefab != null)
+                {
+                    // 1. Instantiate the fireball clone
+                    GameObject bulletObj = Instantiate(vfxPrefab, spawnPos, Quaternion.LookRotation(dir));
+
+                    // 2. Apply your editable scale setting
+                    bulletObj.transform.localScale = Vector3.one * fireballScale;
+
+                    // 3. Initialize projectile behavior and assign the explosion
+                    VfxProjectile proj = bulletObj.GetComponent<VfxProjectile>();
+                    if (proj != null)
+                    {
+                        proj.Init(user.gameObject, damage, bulletSpeed);
+                        proj.explosionVfxPrefab = explosionVfxPrefab; // No longer causes an error
+                    }
+                }
+                else
+                {
+                    // Fallback to basic projectile if no VFX prefab is assigned
+                    Projectile.Spawn(spawnPos, dir, bulletSpeed, damage, new Color(1f, 0.4f, 0f));
+                }
             }
 
-            // Wait for the next bullet tick
             yield return new WaitForSeconds(interval);
             elapsed += interval;
-
-            // Rotate the offset for the next wave, creating the spiral shape
             currentAngleOffset += spinSpeed * interval;
         }
 
-        // Release the player back to normal movement
         movement.EndLaunch();
     }
 }

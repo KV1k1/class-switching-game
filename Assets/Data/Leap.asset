@@ -15,5 +15,9 @@ MonoBehaviour:
   icon: {fileID: 1514131131, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
   cooldown: 4
   animation: Jump
+  vfxPrefab: {fileID: 4593184484909914552, guid: 2e1e9506f5904a64b81744324fb7cd50, type: 3}
   distance: 6
   height: 3
+  landingDamage: 35
+  landingRadius: 4.5
+  vfxScale: 1

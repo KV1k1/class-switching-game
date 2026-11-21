@@ -16,7 +16,8 @@ public class GunnerJumpSkill : Skill
         PlayerMovement movement = user.GetComponent<PlayerMovement>();
         ClassData startClass = user.CurrentClass;
 
-        SmokeZone.Spawn(user.transform.position, smokeRadius, smokeDamagePerTick, smokeDuration, smokeTickRate);
+        // Pass vfxPrefab to SmokeZone.Spawn
+        SmokeZone.Spawn(user.transform.position, smokeRadius, smokeDamagePerTick, smokeDuration, smokeTickRate, vfxPrefab);
 
         float g = Mathf.Abs(movement.gravity);
         float upSpeed = Mathf.Sqrt(2f * g * height);
@@ -24,21 +25,21 @@ public class GunnerJumpSkill : Skill
         Vector3 horizontal = -user.transform.forward * (distance / airTime);
 
         movement.Launch(horizontal, upSpeed);
-        user.comboWindowOpen = true;            // NEW
+        user.comboWindowOpen = true;
 
         yield return new WaitForSeconds(0.1f);
         while (!movement.IsGrounded)
             yield return null;
 
         movement.EndLaunch();
-        user.comboWindowOpen = false;           // NEW
+        user.comboWindowOpen = false;
 
         if (user.CurrentClass != startClass)
         {
             Skill finisher = user.CurrentClass.jumpFinisher;
             if (finisher != null)
             {
-                user.PlaySkillAnim(finisher);      // NEW
+                user.PlaySkillAnim(finisher);
                 yield return finisher.Use(user);
             }
         }

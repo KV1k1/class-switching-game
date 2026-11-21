@@ -15,10 +15,12 @@ MonoBehaviour:
   icon: {fileID: 566000005, guid: 4d2aaf12ad00a014baf4fcbba8924aff, type: 3}
   cooldown: 20
   animation: Shoot
+  vfxPrefab: {fileID: 3226506910322988314, guid: eccbc655050af0b4f81d8db39f84a58e, type: 3}
   duration: 1
   damage: 15
   bulletSpeed: 15
   shotsPerSecond: 8
   streamCount: 4
   spinSpeed: 90
-  ultimateColor: {r: 1, g: 0.4, b: 0, a: 1}
+  fireballScale: 0.4
+  explosionVfxPrefab: {fileID: 2433282508537954060, guid: 3ef3ae421f71c5c4e97fe12dc2fc6312, type: 3}

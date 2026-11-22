@@ -15,6 +15,8 @@ public class PlayerHealth : Health
         destroyOnDeath = false;   // the player stays in the scene when dead
         movement = GetComponent<PlayerMovement>();
         animator = GetComponentInChildren<Animator>();
+        if (GetComponent<PlayerExperience>() == null)
+            gameObject.AddComponent<PlayerExperience>();
     }
 
     void OnEnable()  { AnyDied += OnSomethingDied; }

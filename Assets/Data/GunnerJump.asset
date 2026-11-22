@@ -22,3 +22,4 @@ MonoBehaviour:
   smokeDamagePerTick: 5
   smokeDuration: 4
   smokeTickRate: 0.5
+  frostComboVfxPrefab: {fileID: 3621047873860463696, guid: fb3b9b0b33d48c64c8c11e01dbe71caa, type: 3}

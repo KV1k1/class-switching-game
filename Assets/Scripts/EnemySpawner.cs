@@ -1,22 +1,53 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class EnemySpawner : MonoBehaviour
 {
     public GameObject enemyPrefab;
     public float spawnInterval = 2f;
     public float spawnRadius = 15f;
+    public int stopSpawningAtLevel = 3;
+    [Header("Timed boss encounter")]
+    [Range(1f, 60f)] public float bossSpawnDelaySeconds = 45f;
     Transform player;
+    PlayerExperience playerExperience;
+    BossAI timedBoss;
+    bool normalSpawningStopped;
 
     bool finalWaveActive = false;
     List<GameObject> finalWaveEnemies = new List<GameObject>();
     System.Action onFinalWaveDefeated;
 
+    void Awake()
+    {
+        if (SceneManager.GetActiveScene().name != "SampleScene") return;
+
+        timedBoss = FindFirstObjectByType<BossAI>();
+        if (timedBoss != null) timedBoss.gameObject.SetActive(false);
+    }
+
     void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform;
+        if (SceneManager.GetActiveScene().name != "SampleScene") return;
+
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject == null) return;
+        player = playerObject.transform;
+        playerExperience = playerObject.GetComponent<PlayerExperience>();
         InvokeRepeating(nameof(Spawn), 1f, spawnInterval);
+        if (timedBoss != null) StartCoroutine(SpawnTimedBoss());
+    }
+
+    IEnumerator SpawnTimedBoss()
+    {
+        yield return new WaitForSeconds(Mathf.Clamp(bossSpawnDelaySeconds, 1f, 60f));
+        if (timedBoss == null) yield break;
+
+        timedBoss.gameObject.SetActive(true);
+        if (GameUI.Instance != null)
+            GameUI.Instance.ShowNotification(timedBoss.bossName + "\nHAS ENTERED THE EXPEDITION");
     }
 
     void Spawn()
@@ -87,6 +118,13 @@ public class EnemySpawner : MonoBehaviour
 
     void Update()
     {
+        if (!finalWaveActive && !normalSpawningStopped && playerExperience != null &&
+            playerExperience.currentLevel >= stopSpawningAtLevel)
+        {
+            normalSpawningStopped = true;
+            CancelInvoke(nameof(Spawn));
+        }
+
         if (!finalWaveActive) return;
 
         // Clean up destroyed/null enemies from our tracking list

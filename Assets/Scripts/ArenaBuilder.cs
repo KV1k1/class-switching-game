@@ -1,8 +1,16 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ArenaBuilder : MonoBehaviour
 {
     public GameObject[] treePrefabs;
+    public GameObject[] sanctuaryTreePrefabs;
+    public GameObject[] sanctuaryDetailPrefabs;
+    [Header("Archivist NPC")]
+    public GameObject archivistPrefab;
+    public AnimationClip archivistIdleClip;
+    public AnimationClip archivistWalkingClip;
+    public AnimationClip archivistGreetClip;
     public int treeCount = 120;
     public float halfSize = 35f;               // invisible walls stand this far from the center
     public float forestDepth = 12f;            // how far the trees extend beyond the walls
@@ -10,6 +18,11 @@ public class ArenaBuilder : MonoBehaviour
 
     void Start()
     {
+        // HubScene has its own woodland layout built by HubWorldController.
+        // Keep this asset-backed tree catalog available there without copying
+        // the expedition arena walls and forest ring into the sanctuary.
+        if (SceneManager.GetActiveScene().name == "HubScene") return;
+
         BuildWalls();
         ScatterTrees();
     }

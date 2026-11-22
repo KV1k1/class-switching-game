@@ -1177,6 +1177,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArenaBuilder
   treePrefabs:
   - {fileID: 919132149155446097, guid: bde16c137b6f2eb468537a0bc6a0f77a, type: 3}
+  archivistPrefab: {fileID: 919132149155446097, guid: b98dc2a57e5384744b2a75c32c472c60, type: 3}
+  archivistIdleClip: {fileID: -3100369314251171874, guid: 471453b9b34cf2d4a9ef4207e5da6429, type: 3}
+  archivistWalkingClip: {fileID: -1610863427237328480, guid: 471453b9b34cf2d4a9ef4207e5da6429, type: 3}
+  archivistGreetClip: {fileID: -1097069501823219401, guid: 471453b9b34cf2d4a9ef4207e5da6429, type: 3}
   treeCount: 120
   halfSize: 70
   forestDepth: 12

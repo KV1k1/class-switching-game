@@ -25,6 +25,8 @@ public class BossAI : MonoBehaviour
 
     [Header("Rewards")]
     public ClassData classToUnlock; // Assign the Mage ClassData in the Inspector
+    public int experienceReward = 100;
+    public int masteryResourceReward = 25;
 
     Health health;
     Transform player;
@@ -38,6 +40,8 @@ public class BossAI : MonoBehaviour
     {
         health = GetComponent<Health>();
         health.destroyOnDeath = false; //[cite: 12]
+        health.experienceReward = experienceReward;
+        health.masteryResourceReward = masteryResourceReward;
     }
 
     void OnEnable() { Health.AnyDied += OnAnyDied; } //[cite: 12]
@@ -150,18 +154,18 @@ public class BossAI : MonoBehaviour
 
     IEnumerator Die()
     {
+        GameProgression.MarkFirstBossDefeated();
         GameUI.Instance.HideBossBar();
         if (anim != null) anim.speed = 0f;
 
         // 1. Unlock the class and show the unlock notification
-        if (classToUnlock != null && player != null)
+        PlayerLoadout currentLoadout = player != null ? player.GetComponent<PlayerLoadout>() : null;
+        bool alreadyEquippedReward = currentLoadout != null &&
+            System.Array.IndexOf(currentLoadout.classes, classToUnlock) >= 0;
+        if (classToUnlock != null && player != null && !alreadyEquippedReward)
         {
-            PlayerLoadout loadout = player.GetComponent<PlayerLoadout>();
-            if (loadout != null)
-            {
-                loadout.UnlockClass(classToUnlock);
-                GameUI.Instance.ShowNotification($"UNLOCKED: {classToUnlock.className}!\nPress Q to switch");
-            }
+            DroppedClassPickup.Spawn(classToUnlock, transform.position);
+            GameUI.Instance.ShowNotification($"DROPPED: {classToUnlock.className}!\nMove close and press E to collect");
         }
 
         // 2. Shrink the boss away in real-time
@@ -178,21 +182,38 @@ public class BossAI : MonoBehaviour
         yield return new WaitForSeconds(3.5f);
 
         // 4. Trigger the final wave countdown safely
+        Transform runPlayer = player;
         EnemySpawner spawner = FindFirstObjectByType<EnemySpawner>();
         if (spawner != null)
         {
-            spawner.SpawnFinalWave(20, 1.5f, () =>
-            {
-                GameUI.Instance.ShowEnd("VICTORY!", "Press R to play again", new Color(0.2f, 1f, 0.3f));
-                Time.timeScale = 0f;
-            });
+            spawner.SpawnFinalWave(20, 1.5f, () => CompleteRun(runPlayer));
         }
         else
         {
-            GameUI.Instance.ShowEnd("VICTORY!", "Press R to play again", new Color(0.2f, 1f, 0.3f));
-            Time.timeScale = 0f;
+            CompleteRun(runPlayer);
         }
 
         Destroy(gameObject);
+    }
+
+    static void CompleteRun(Transform runPlayer)
+    {
+        PlayerLoadout loadout = runPlayer != null ? runPlayer.GetComponent<PlayerLoadout>() : null;
+        PlayerExperience experience = runPlayer != null ? runPlayer.GetComponent<PlayerExperience>() : null;
+        int returnedMasteryResource = GameProgression.SaveCompletedRun(
+            loadout != null ? loadout.classes : null,
+            experience != null ? experience.currentLevel : 1);
+
+        bool archivistRescued = GameProgression.RecruitArchivistAfterCompletedExpedition();
+        WorldPortal returnPortal = null;
+        if (runPlayer != null)
+            returnPortal = WorldPortal.SpawnHubReturn(runPlayer.position + runPlayer.forward * 5f);
+        if (archivistRescued && returnPortal != null)
+            ArchivistNpcController.SpawnAtReturnPortal(returnPortal.transform.position, runPlayer);
+
+        if (GameUI.Instance != null)
+            GameUI.Instance.ShowNotification(archivistRescued
+                ? "RUN COMPLETE!\nThe Archivist is waiting at the return portal.\nReturned with " + returnedMasteryResource + " Memory Shards."
+                : "RUN COMPLETE!\nReturned with " + returnedMasteryResource + " Memory Shards. A return portal has opened");
     }
 }

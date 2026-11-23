@@ -6,15 +6,18 @@ using UnityEngine.SceneManagement;
 public class EnemySpawner : MonoBehaviour
 {
     public GameObject enemyPrefab;
-    public float spawnInterval = 2f;
+    public float spawnInterval = 1.7f;
+    [Min(0.2f)] public float minimumSpawnInterval = 0.75f;
+    [Min(1f)] public float spawnRateGrowthPerMinute = 1.22f;
+    [Min(1)] public int maxAliveZombies = 12;
     public float spawnRadius = 15f;
-    public int stopSpawningAtLevel = 3;
     [Header("Timed boss encounter")]
-    [Range(1f, 60f)] public float bossSpawnDelaySeconds = 45f;
+    [Min(1f)] public float bossSpawnDelaySeconds = 60f;
     Transform player;
-    PlayerExperience playerExperience;
     BossAI timedBoss;
-    bool normalSpawningStopped;
+    Coroutine zombieSpawnRoutine;
+    readonly List<GameObject> regularZombies = new List<GameObject>();
+    float expeditionStartTime;
 
     bool finalWaveActive = false;
     List<GameObject> finalWaveEnemies = new List<GameObject>();
@@ -35,36 +38,73 @@ public class EnemySpawner : MonoBehaviour
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         if (playerObject == null) return;
         player = playerObject.transform;
-        playerExperience = playerObject.GetComponent<PlayerExperience>();
-        InvokeRepeating(nameof(Spawn), 1f, spawnInterval);
+        expeditionStartTime = Time.time;
+        zombieSpawnRoutine = StartCoroutine(SpawnZombies());
         if (timedBoss != null) StartCoroutine(SpawnTimedBoss());
+    }
+
+    IEnumerator SpawnZombies()
+    {
+        yield return new WaitForSeconds(1f);
+        while (!finalWaveActive && player != null)
+        {
+            Spawn();
+            yield return new WaitForSeconds(CalculateSpawnInterval());
+        }
+        zombieSpawnRoutine = null;
+    }
+
+    float CalculateSpawnInterval()
+    {
+        float elapsedMinutes = Mathf.Max(0f, Time.time - expeditionStartTime) / 60f;
+        float rateMultiplier = Mathf.Pow(Mathf.Max(1f, spawnRateGrowthPerMinute), elapsedMinutes);
+        float baseInterval = Mathf.Max(0.2f, spawnInterval);
+        return Mathf.Max(Mathf.Max(0.2f, minimumSpawnInterval), baseInterval / rateMultiplier);
     }
 
     IEnumerator SpawnTimedBoss()
     {
-        yield return new WaitForSeconds(Mathf.Clamp(bossSpawnDelaySeconds, 1f, 60f));
-        if (timedBoss == null) yield break;
+        yield return new WaitForSeconds(Mathf.Max(1f, bossSpawnDelaySeconds));
+        if (timedBoss == null || player == null) yield break;
+
+        float spawnDistance = Mathf.Clamp(timedBoss.wakeRadius * 0.65f, 5f, 9f);
+        Vector3 spawnPosition = player.position + player.forward * spawnDistance;
+        spawnPosition.y = timedBoss.transform.position.y;
+        timedBoss.transform.position = spawnPosition;
+        Vector3 towardPlayer = player.position - spawnPosition;
+        towardPlayer.y = 0f;
+        if (towardPlayer.sqrMagnitude > 0.001f)
+            timedBoss.transform.rotation = Quaternion.LookRotation(towardPlayer.normalized);
 
         timedBoss.gameObject.SetActive(true);
+        timedBoss.BeginEncounter(player);
         if (GameUI.Instance != null)
-            GameUI.Instance.ShowNotification(timedBoss.bossName + "\nHAS ENTERED THE EXPEDITION");
+            GameUI.Instance.ShowExpeditionStatus("BOSS ENCOUNTER: " + timedBoss.bossName + " has arrived", 4f);
     }
 
     void Spawn()
     {
         if (finalWaveActive || player == null) return;
+        if (enemyPrefab == null) return;
+
+        regularZombies.RemoveAll(zombie => zombie == null);
+        if (regularZombies.Count >= Mathf.Max(1, maxAliveZombies)) return;
 
         Vector2 circle = Random.insideUnitCircle.normalized * spawnRadius;
         Vector3 pos = player.position + new Vector3(circle.x, 0, circle.y);
         pos.y = 0.1f;
-        Instantiate(enemyPrefab, pos, Quaternion.identity);
+        regularZombies.Add(Instantiate(enemyPrefab, pos, Quaternion.identity));
     }
 
     // Triggered when the boss dies with a preparation warning
     public void SpawnFinalWave(int count, float speedMultiplier, System.Action onComplete)
     {
         // Stop normal continuous spawning
-        CancelInvoke(nameof(Spawn));
+        if (zombieSpawnRoutine != null)
+        {
+            StopCoroutine(zombieSpawnRoutine);
+            zombieSpawnRoutine = null;
+        }
         onFinalWaveDefeated = onComplete;
 
         // Start preparation warning sequence
@@ -74,19 +114,19 @@ public class EnemySpawner : MonoBehaviour
     IEnumerator FinalWaveCountdownRoutine(int count, float speedMultiplier)
     {
         // Notification phases for the player to prepare
-        GameUI.Instance.ShowNotification("PREPARE FOR FINAL WAVE...\nGet Ready!");
+        GameUI.Instance?.ShowExpeditionStatus("FINAL WAVE INCOMING — PREPARE", 1.5f);
         yield return new WaitForSeconds(1.5f);
 
-        GameUI.Instance.ShowNotification("3...");
+        GameUI.Instance?.ShowExpeditionStatus("FINAL WAVE STARTS IN 3", 1.2f);
         yield return new WaitForSeconds(1.0f);
 
-        GameUI.Instance.ShowNotification("2...");
+        GameUI.Instance?.ShowExpeditionStatus("FINAL WAVE STARTS IN 2", 1.2f);
         yield return new WaitForSeconds(1.0f);
 
-        GameUI.Instance.ShowNotification("1...");
+        GameUI.Instance?.ShowExpeditionStatus("FINAL WAVE STARTS IN 1", 1.2f);
         yield return new WaitForSeconds(1.0f);
 
-        GameUI.Instance.ShowNotification("FINAL WAVE SPAWNED!");
+        GameUI.Instance?.ShowExpeditionStatus("FINAL WAVE STARTED — DEFEAT ALL ENEMIES", 4f);
 
         finalWaveActive = true;
         finalWaveEnemies.Clear();
@@ -118,13 +158,6 @@ public class EnemySpawner : MonoBehaviour
 
     void Update()
     {
-        if (!finalWaveActive && !normalSpawningStopped && playerExperience != null &&
-            playerExperience.currentLevel >= stopSpawningAtLevel)
-        {
-            normalSpawningStopped = true;
-            CancelInvoke(nameof(Spawn));
-        }
-
         if (!finalWaveActive) return;
 
         // Clean up destroyed/null enemies from our tracking list

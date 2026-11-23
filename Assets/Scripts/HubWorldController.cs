@@ -28,12 +28,9 @@ public static class HubWorldController
         }
 
         BuildWoodlandClearing();
-        CreateSanctuaryChronicle();
         WorldPortal.SpawnToFirstMap(new Vector3(0f, 0f, 20f));
         if (GameProgression.ArchivistRecruited)
             ArchivistNpcController.SpawnForHub(new Vector3(-5f, 0f, 0f));
-        CreateResident("The Blacksmith", "Bring back strange weapons. I can help you make sense of them.",
-            new Vector3(5f, 0f, 0f), new Color(0.8f, 0.34f, 0.2f));
     }
 
     static void BuildWoodlandClearing()
@@ -137,67 +134,6 @@ public static class HubWorldController
         light.color = new Color(1f, 0.52f, 0.2f);
         light.intensity = 1.15f;
         light.range = 7f;
-    }
-
-    static void CreateSanctuaryChronicle()
-    {
-        GameObject plinth = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        plinth.name = "Sanctuary Chronicle";
-        plinth.transform.position = new Vector3(-9f, 0.8f, 4f);
-        plinth.transform.localScale = new Vector3(3f, 1.6f, 0.5f);
-        SetMaterial(plinth.GetComponent<Renderer>(), new Color(0.17f, 0.16f, 0.2f));
-
-        GameObject textObject = new GameObject("Sanctuary Record");
-        textObject.transform.position = new Vector3(-9f, 1.3f, 3.72f);
-        textObject.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
-        TextMesh text = textObject.AddComponent<TextMesh>();
-        SavedGameProgress progress = GameProgression.Load();
-        string[] classes = GameProgression.GetUnlockedClassNames();
-        text.text = "SANCTUARY RECORD\nExpeditions: " + progress.completedRuns +
-            "\nBest level: " + progress.bestRunLevel +
-            "\nMemory shards: " + progress.masteryResourceBalance +
-            "\nClasses: " + string.Join(", ", classes);
-        text.fontSize = 28;
-        text.characterSize = 0.055f;
-        text.anchor = TextAnchor.MiddleCenter;
-        text.alignment = TextAlignment.Center;
-        text.color = new Color(0.9f, 0.86f, 0.72f);
-    }
-
-    static void CreateResident(string residentName, string dialogue, Vector3 position, Color color)
-    {
-        GameObject resident = new GameObject(residentName);
-        resident.transform.position = position;
-
-        GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        body.name = "Body";
-        body.transform.SetParent(resident.transform, false);
-        body.transform.localPosition = new Vector3(0f, 0.95f, 0f);
-        body.transform.localScale = new Vector3(0.75f, 0.95f, 0.75f);
-        Object.Destroy(body.GetComponent<Collider>());
-        SetMaterial(body.GetComponent<Renderer>(), color);
-
-        GameObject head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        head.name = "Head";
-        head.transform.SetParent(resident.transform, false);
-        head.transform.localPosition = new Vector3(0f, 2.05f, 0f);
-        head.transform.localScale = Vector3.one * 0.55f;
-        Object.Destroy(head.GetComponent<Collider>());
-        SetMaterial(head.GetComponent<Renderer>(), new Color(0.72f, 0.62f, 0.52f));
-
-        GameObject nameTag = new GameObject("Name Tag");
-        nameTag.transform.SetParent(resident.transform, false);
-        nameTag.transform.localPosition = new Vector3(0f, 2.65f, 0f);
-        TextMesh text = nameTag.AddComponent<TextMesh>();
-        text.text = residentName;
-        text.fontSize = 40;
-        text.characterSize = 0.07f;
-        text.anchor = TextAnchor.LowerCenter;
-        text.alignment = TextAlignment.Center;
-        text.color = Color.white;
-
-        HubResident interaction = resident.AddComponent<HubResident>();
-        interaction.Initialize(residentName, dialogue);
     }
 
     static void SetMaterial(Renderer renderer, Color color, bool emissive = false)

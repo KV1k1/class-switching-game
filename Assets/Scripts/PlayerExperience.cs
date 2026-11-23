@@ -60,6 +60,7 @@ public class PlayerExperience : MonoBehaviour
     void OnHealthDied(Health deadHealth)
     {
         if (!IsExpedition || deadHealth == null || deadHealth is PlayerHealth) return;
+        GameProgression.RecordRunEnemyKilled();
         if (deadHealth.experienceReward > 0) GainExperience(deadHealth.experienceReward);
         GameProgression.AwardRunMasteryResource(deadHealth.masteryResourceReward);
     }
@@ -86,7 +87,9 @@ public class PlayerExperience : MonoBehaviour
     {
         if (!IsExpedition || amount <= 0) return;
 
-        currentExperience += Mathf.Max(1, Mathf.RoundToInt(amount * experienceGainMultiplier));
+        int gained = Mathf.Max(1, Mathf.RoundToInt(amount * experienceGainMultiplier));
+        GameProgression.RecordRunExperience(gained);
+        currentExperience += gained;
         while (currentExperience >= experienceToNextLevel)
         {
             currentExperience -= experienceToNextLevel;

@@ -7,8 +7,9 @@ public class Projectile : MonoBehaviour
     float damage;
     bool targetPlayer;
     Color color;
+    GameObject owner;
 
-    public static void Spawn(Vector3 position, Vector3 direction, float speed, float damage, Color color, bool targetPlayer = false)
+    public static void Spawn(Vector3 position, Vector3 direction, float speed, float damage, Color color, bool targetPlayer = false, GameObject owner = null)
     {
         GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         go.transform.position = position;
@@ -36,6 +37,7 @@ public class Projectile : MonoBehaviour
         p.damage = damage;
         p.targetPlayer = targetPlayer;
         p.color = color;
+        p.owner = owner;
 
         Destroy(go, 2f);
     }
@@ -52,7 +54,8 @@ public class Projectile : MonoBehaviour
         Health h = other.GetComponent<Health>();
         if (h == null) return;
 
-        h.TakeDamage(damage);
+        PlayerLoadout attacker = owner != null ? owner.GetComponent<PlayerLoadout>() : null;
+        h.TakeDamage(attacker != null && !targetPlayer ? attacker.ScaleSkillDamage(damage) : damage);
         Fx.Burst(transform.position, color, 8, 4f, 0.15f, 0.25f);   // impact sparks
         Destroy(gameObject);
     }

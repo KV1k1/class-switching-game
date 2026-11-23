@@ -14,8 +14,6 @@ public class FreezeBurstSkill : Skill
     {
         Vector3 center = user.transform.position;
         Color frostColor = new Color(0.35f, 0.82f, 1f);
-        if (GameUI.Instance != null)
-            GameUI.Instance.ShowNotification("MAGE COMBO: FROST BURST");
         SkillUtil.FlashDisc(center, radius, frostColor, 0.35f);
         SpawnFrostVfx(center + Vector3.up * 0.2f);
 
@@ -27,7 +25,7 @@ public class FreezeBurstSkill : Skill
 
             enemy.FreezeFor(freezeDuration);
             Health enemyHealth = enemy.GetComponent<Health>();
-            if (enemyHealth != null) enemyHealth.TakeDamage(damage);
+            if (enemyHealth != null) enemyHealth.TakeDamage(user.ScaleSkillDamage(damage));
             SpawnFrostVfx(enemy.transform.position + Vector3.up * 0.8f);
         }
 

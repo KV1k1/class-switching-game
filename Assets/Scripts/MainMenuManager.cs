@@ -43,6 +43,20 @@ public class MainMenuManager : MonoBehaviour
         }
 
         menuRoot = playButton.transform.parent;
+        RectTransform playRect = playButton.GetComponent<RectTransform>();
+        RectTransform quitRect = quitButton.GetComponent<RectTransform>();
+        const float buttonSpacing = 98f;
+        Vector2 playPosition = playRect.anchoredPosition;
+
+        // Normalize the existing Quit button to the Play button's bounds and
+        // place all three menu actions on the same vertical centerline.
+        quitRect.anchorMin = playRect.anchorMin;
+        quitRect.anchorMax = playRect.anchorMax;
+        quitRect.pivot = playRect.pivot;
+        quitRect.sizeDelta = playRect.sizeDelta;
+        quitRect.localScale = playRect.localScale;
+        quitRect.anchoredPosition = playPosition + Vector2.down * (buttonSpacing * 2f);
+
         TMP_Text labelTemplate = playButton.GetComponentInChildren<TMP_Text>();
         if (labelTemplate == null)
         {
@@ -52,13 +66,23 @@ public class MainMenuManager : MonoBehaviour
 
         labelTemplate.text = "Play";
         TMP_Text quitLabel = quitButton.GetComponentInChildren<TMP_Text>();
-        if (quitLabel != null) quitLabel.text = "Quit";
+        if (quitLabel != null)
+        {
+            quitLabel.text = "Quit";
+            RectTransform playLabelRect = labelTemplate.rectTransform;
+            RectTransform quitLabelRect = quitLabel.rectTransform;
+            quitLabelRect.anchorMin = playLabelRect.anchorMin;
+            quitLabelRect.anchorMax = playLabelRect.anchorMax;
+            quitLabelRect.pivot = playLabelRect.pivot;
+            quitLabelRect.sizeDelta = playLabelRect.sizeDelta;
+            quitLabelRect.anchoredPosition = playLabelRect.anchoredPosition;
+            quitLabelRect.localScale = playLabelRect.localScale;
+            quitLabelRect.localRotation = playLabelRect.localRotation;
+        }
 
         Button settingsButton = CloneStyledButton(playButton, menuRoot, "SettingsButton", "Settings");
         RectTransform settingsRect = settingsButton.GetComponent<RectTransform>();
-        Vector2 playPosition = playButton.GetComponent<RectTransform>().anchoredPosition;
-        Vector2 quitPosition = quitButton.GetComponent<RectTransform>().anchoredPosition;
-        settingsRect.anchoredPosition = Vector2.Lerp(playPosition, quitPosition, 0.5f);
+        settingsRect.anchoredPosition = playPosition + Vector2.down * buttonSpacing;
         settingsButton.onClick.AddListener(OpenSettings);
 
         settingsPanel = new GameObject("Settings Window", typeof(RectTransform), typeof(Image));

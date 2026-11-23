@@ -70,9 +70,6 @@ public class PlayerLoadout : MonoBehaviour
             if (gunnerJumpComboActive && LastSwitchedFrom == gunnerJumpSourceClass)
             {
                 gunnerJumpTargetClass = LastSwitchedTo;
-                if (gunnerJumpTargetClass != null && gunnerJumpTargetClass.className == "Mage" &&
-                    GameUI.Instance != null)
-                    GameUI.Instance.ShowNotification("FROST BURST READY: LAND TO RELEASE");
             }
             nextSwitchTime = Time.time + switchDelay;
             comboWindowOpen = false;
@@ -141,7 +138,12 @@ public class PlayerLoadout : MonoBehaviour
     public float GetCooldownDuration(int slot)
     {
         Skill s = GetSkill(slot);
-        return s == null ? 0f : s.cooldown;
+        return s == null ? 0f : s.cooldown * GameProgression.GetClassCooldownMultiplier(CurrentClass.className);
+    }
+
+    public float ScaleSkillDamage(float damage)
+    {
+        return damage * GameProgression.GetClassSkillDamageMultiplier(CurrentClass.className);
     }
 
     public void PlaySkillAnim(Skill s)
@@ -161,7 +163,7 @@ public class PlayerLoadout : MonoBehaviour
         // Turn character to face mouse location instantly before executing attack
         if (movement != null) movement.FaceMouse();
 
-        cooldownReady[active, slot] = Time.time + skill.cooldown;
+        cooldownReady[active, slot] = Time.time + GetCooldownDuration(slot);
         PlaySkillAnim(skill);
         StartCoroutine(skill.Use(this));
     }

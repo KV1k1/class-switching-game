@@ -22,7 +22,7 @@ public class ChainZapAttack : Skill
 
             hitTargets.Add(target);
             Vector3 targetPos = target.transform.position + Vector3.up * 1f;
-            target.GetComponent<Health>()?.TakeDamage(damage);
+            target.GetComponent<Health>()?.TakeDamage(user.ScaleSkillDamage(damage));
 
             // CREATE REAL VISUAL LINE
             GameObject lineObj = new GameObject("ZapVisual");

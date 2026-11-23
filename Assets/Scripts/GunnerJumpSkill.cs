@@ -18,7 +18,7 @@ public class GunnerJumpSkill : Skill
         ClassData startClass = user.CurrentClass;
 
         // Pass vfxPrefab to SmokeZone.Spawn
-        SmokeZone.Spawn(user.transform.position, smokeRadius, smokeDamagePerTick, smokeDuration, smokeTickRate, vfxPrefab);
+        SmokeZone.Spawn(user.transform.position, smokeRadius, smokeDamagePerTick, smokeDuration, smokeTickRate, vfxPrefab, user.gameObject);
 
         float g = Mathf.Abs(movement.gravity);
         float upSpeed = Mathf.Sqrt(2f * g * height);

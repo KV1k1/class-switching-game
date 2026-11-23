@@ -43,8 +43,8 @@ public class HubResident : MonoBehaviour
             if (Time.timeScale > 0f && Input.GetKeyDown(KeyCode.E) && GameUI.Instance != null)
             {
                 bool firstMeeting = GameProgression.RegisterNpcMet(residentName);
-                GameUI.Instance.ShowNotification(residentName + "\n" +
-                    (firstMeeting ? dialogue : "Good to see you again.") );
+                GameUI.Instance.ShowThoughtBubble(transform,
+                    firstMeeting ? dialogue : "Good to see you again.");
             }
         }
         else if (inRange)

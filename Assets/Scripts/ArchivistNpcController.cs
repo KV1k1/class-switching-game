@@ -4,6 +4,7 @@ using UnityEngine.Playables;
 
 public class ArchivistNpcController : MonoBehaviour
 {
+    static ArchivistNpcController activeArchivist;
     const float InteractionRange = 3.5f;
     const float WalkSpeed = 1.1f;
     const float PatrolRadius = 1.8f;
@@ -26,24 +27,40 @@ public class ArchivistNpcController : MonoBehaviour
     bool inRange;
     bool interactionEnabled;
     bool hubResident;
+    bool questOfferPending;
     TextMesh nameTag;
 
     public static ArchivistNpcController SpawnForFirstExpedition(Health playerHealth)
     {
         if (GameProgression.ArchivistRecruited || playerHealth == null) return null;
+        ArchivistNpcController existing = FindExistingArchivist();
+        if (existing != null) return existing;
+
         ArenaBuilder assets = Object.FindFirstObjectByType<ArenaBuilder>();
         if (!HasRequiredAssets(assets)) return null;
 
         Transform playerTransform = playerHealth.transform;
-        Vector3 position = playerTransform.position + playerTransform.forward * 5f;
-        position.y = 0f;
-        ArchivistNpcController npc = Spawn(assets, position, Quaternion.LookRotation(-playerTransform.forward));
+        Vector3 position = new Vector3(0f, 0f, 4f);
+        Vector3 towardPlayer = playerTransform.position - position;
+        towardPlayer.y = 0f;
+        Quaternion facing = towardPlayer.sqrMagnitude > 0.001f
+            ? Quaternion.LookRotation(towardPlayer.normalized)
+            : Quaternion.identity;
+        ArchivistNpcController npc = Spawn(assets, position, facing);
         npc.Configure(assets, playerTransform, false, false, true);
         return npc;
     }
 
     public static ArchivistNpcController SpawnForHub(Vector3 position)
     {
+        ArchivistNpcController existing = FindExistingArchivist();
+        if (existing != null)
+        {
+            existing.transform.position = position;
+            existing.Configure(Object.FindFirstObjectByType<ArenaBuilder>(), FindPlayer(), true, false, true);
+            return existing;
+        }
+
         ArenaBuilder assets = Object.FindFirstObjectByType<ArenaBuilder>();
         if (!HasRequiredAssets(assets)) return null;
 
@@ -64,9 +81,24 @@ public class ArchivistNpcController : MonoBehaviour
             ? Quaternion.LookRotation(playerTransform.position - position)
             : Quaternion.identity;
 
-        ArchivistNpcController npc = Spawn(assets, position, facing);
+        ArchivistNpcController npc = FindExistingArchivist();
+        if (npc == null)
+            npc = Spawn(assets, position, facing);
+        else
+        {
+            npc.transform.position = position;
+            npc.transform.rotation = facing;
+            AlignFeetToGround(npc.transform, position.y);
+        }
         npc.Configure(assets, playerTransform, false, true, false);
         return npc;
+    }
+
+    static ArchivistNpcController FindExistingArchivist()
+    {
+        if (activeArchivist != null) return activeArchivist;
+        activeArchivist = Object.FindFirstObjectByType<ArchivistNpcController>();
+        return activeArchivist;
     }
 
     static bool HasRequiredAssets(ArenaBuilder assets)
@@ -85,7 +117,8 @@ public class ArchivistNpcController : MonoBehaviour
         character.name = "The Archivist";
         character.transform.localScale = Vector3.one * 2f;
         AlignFeetToGround(character.transform, position.y);
-        return character.AddComponent<ArchivistNpcController>();
+        activeArchivist = character.AddComponent<ArchivistNpcController>();
+        return activeArchivist;
     }
 
     static void AlignFeetToGround(Transform character, float groundHeight)
@@ -113,6 +146,10 @@ public class ArchivistNpcController : MonoBehaviour
     void Configure(ArenaBuilder assets, Transform playerTransform, bool isHubResident,
         bool greetAtSpawn, bool canInteract)
     {
+        if (animationGraph.IsValid()) animationGraph.Destroy();
+        currentClipPlayable = default;
+        currentClip = null;
+
         animator = GetComponentInChildren<Animator>();
         idleClip = assets.archivistIdleClip;
         walkingClip = assets.archivistWalkingClip;
@@ -122,6 +159,7 @@ public class ArchivistNpcController : MonoBehaviour
         patrolEnabled = !greetAtSpawn;
         interactionEnabled = canInteract;
         hubResident = isHubResident;
+        greeting = greetAtSpawn;
 
         if (animator != null)
         {
@@ -202,7 +240,12 @@ public class ArchivistNpcController : MonoBehaviour
             inRange = true;
             if (GameUI.Instance != null)
             {
-                GameUI.Instance.SetPickupPrompt("Press E to speak with The Archivist");
+                string prompt = hubResident
+                    ? "Press E to open The Archivist's memory archive"
+                    : questOfferPending
+                        ? "Press E again to accept The Archivist's quest"
+                        : "Press E to speak with The Archivist";
+                GameUI.Instance.SetPickupPrompt(prompt);
             }
 
             if (Time.timeScale > 0f && Input.GetKeyDown(KeyCode.E)) Interact();
@@ -221,17 +264,29 @@ public class ArchivistNpcController : MonoBehaviour
         if (hubResident)
         {
             GameProgression.RegisterNpcMet("The Archivist");
-            GameUI.Instance.ShowNotification("THE ARCHIVIST\nThank you for bringing me home. I will keep the names of those we save.");
+            GameUI.Instance.OpenArchivistMenu();
             return;
         }
 
         if (!GameProgression.ArchivistQuestAccepted)
         {
+            if (!questOfferPending)
+            {
+                questOfferPending = true;
+                string offer = GameProgression.FirstBossDefeated
+                    ? "The Guardian has fallen. Clear the final wave and return to the portal. Press E again to accept my quest."
+                    : "The Guardian is waiting beyond the portal. Defeat the boss and clear the final wave. Press E again to accept my quest.";
+                GameUI.Instance.ShowThoughtBubble(transform, offer);
+                GameUI.Instance.SetPickupPrompt("Press E again to accept The Archivist's quest");
+                patrolEnabled = false;
+                PlayIdle();
+                return;
+            }
+
             GameProgression.AcceptArchivistQuest();
-            string objective = GameProgression.FirstBossDefeated
-                ? "The boss is defeated. Finish the expedition and meet me at the return portal."
-                : "Quest accepted: Defeat the first boss. Return to the portal and I will join you.";
-            GameUI.Instance.ShowNotification("THE ARCHIVIST\n" + objective);
+            questOfferPending = false;
+            GameUI.Instance.ShowThoughtBubble(transform,
+                "Quest accepted. Defeat the Guardian, clear the final wave, and meet me at the return portal.");
             patrolEnabled = false;
             PlayIdle();
             return;
@@ -240,7 +295,7 @@ public class ArchivistNpcController : MonoBehaviour
         string response = GameProgression.FirstBossDefeated
             ? "You defeated the Guardian. Finish the expedition and meet me at the return portal."
             : "Defeat the first boss. I will be waiting at the return portal.";
-        GameUI.Instance.ShowNotification("THE ARCHIVIST\n" + response);
+        GameUI.Instance.ShowThoughtBubble(transform, response);
     }
 
     void PlayIdle()
@@ -264,6 +319,13 @@ public class ArchivistNpcController : MonoBehaviour
 
     void CreateNameTag()
     {
+        if (nameTag != null)
+        {
+            nameTag.text = "The Archivist";
+            nameTag.transform.localPosition = new Vector3(0f, 2.35f, 0f);
+            return;
+        }
+
         GameObject label = new GameObject("Archivist Name Tag");
         label.transform.SetParent(transform, false);
         label.transform.localPosition = new Vector3(0f, 2.35f, 0f);
@@ -284,6 +346,7 @@ public class ArchivistNpcController : MonoBehaviour
 
     void OnDestroy()
     {
+        if (activeArchivist == this) activeArchivist = null;
         if (inRange && GameUI.Instance != null) GameUI.Instance.SetPickupPrompt("");
         if (animationGraph.IsValid()) animationGraph.Destroy();
     }

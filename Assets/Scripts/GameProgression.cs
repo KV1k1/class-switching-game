@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using UnityEngine;
 
 [System.Serializable]
@@ -13,28 +16,133 @@ public class SavedGameProgress
     public string[] unlockedClassNames = new string[0];
     public string[] equippedClassNames = new string[0];
     public string[] metNpcNames = new string[0];
+    public List<ClassMasteryProgress> classMastery = new List<ClassMasteryProgress>();
+}
+
+[System.Serializable]
+public class ClassMasteryProgress
+{
+    public string className;
+    public int weaponTraitTier;
+    public int skillTreeTier;
+}
+
+[System.Serializable]
+public class ExpeditionRunLog
+{
+    public int runNumber;
+    public int durationSeconds;
+    public int enemiesKilled;
+    public int experienceGained;
+    public int memoryShardsGathered;
+    public int memoryShardsBanked;
+    public bool completed;
+
+    public string ToDisplayString()
+    {
+        int minutes = durationSeconds / 60;
+        int seconds = durationSeconds % 60;
+        string result = "Duration: " + minutes.ToString("00") + ":" + seconds.ToString("00") +
+            "\nEnemies killed: " + enemiesKilled +
+            "\nXP gained: " + experienceGained +
+            "\nMemory Shards gathered: " + memoryShardsGathered;
+        if (completed) result += "\nMemory Shards banked: " + memoryShardsBanked;
+        return result;
+    }
 }
 
 public static class GameProgression
 {
+    public const int MaximumMasteryTier = 3;
     // Deliberately session-only for now: this survives scene loads but resets
     // when the application starts again.
     static SavedGameProgress sessionProgress = new SavedGameProgress();
     static readonly HashSet<string> classesUnlockedThisRun = new HashSet<string>();
     static int runMasteryResource;
+    static int runSequence;
+    static int activeRunNumber;
+    static float runStartedAt;
+    static int runEnemiesKilled;
+    static int runExperienceGained;
+    static ExpeditionRunLog lastRunLog;
+    public static string LastRunLogFilePath { get; private set; }
 
     public static int RunMasteryResource => runMasteryResource;
     public static int MasteryResourceBalance => sessionProgress.masteryResourceBalance;
 
     public static void BeginRun()
     {
+        runSequence = Mathf.Max(runSequence, sessionProgress.completedRuns) + 1;
+        activeRunNumber = runSequence;
         classesUnlockedThisRun.Clear();
         runMasteryResource = 0;
+        runStartedAt = Time.time;
+        runEnemiesKilled = 0;
+        runExperienceGained = 0;
+        lastRunLog = null;
     }
 
     public static void AwardRunMasteryResource(int amount)
     {
-        if (amount > 0) runMasteryResource += amount;
+        if (amount > 0 && lastRunLog == null) runMasteryResource += amount;
+    }
+
+    public static void RecordRunEnemyKilled()
+    {
+        if (lastRunLog == null) runEnemiesKilled++;
+    }
+
+    public static void RecordRunExperience(int amount)
+    {
+        if (amount > 0 && lastRunLog == null) runExperienceGained += amount;
+    }
+
+    public static ExpeditionRunLog FinishRunLog(bool completed)
+    {
+        if (lastRunLog != null) return lastRunLog;
+
+        lastRunLog = new ExpeditionRunLog
+        {
+            runNumber = activeRunNumber,
+            durationSeconds = Mathf.Max(0, Mathf.FloorToInt(Time.time - runStartedAt)),
+            enemiesKilled = runEnemiesKilled,
+            experienceGained = runExperienceGained,
+            memoryShardsGathered = runMasteryResource,
+            completed = completed
+        };
+
+        AppendRunLog(lastRunLog);
+        return lastRunLog;
+    }
+
+    static void AppendRunLog(ExpeditionRunLog runLog)
+    {
+        string projectRoot = Application.isEditor && Directory.GetParent(Application.dataPath) != null
+            ? Directory.GetParent(Application.dataPath).FullName
+            : Application.persistentDataPath;
+        LastRunLogFilePath = Path.Combine(projectRoot, "ExpeditionLogs.txt");
+
+        string outcome = runLog.completed ? "COMPLETED" : "FAILED";
+        int minutes = runLog.durationSeconds / 60;
+        int seconds = runLog.durationSeconds % 60;
+        string entry = "=== Run " + runLog.runNumber + " | " + outcome + " | " +
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " ===" + Environment.NewLine +
+            "Duration: " + minutes.ToString("00") + ":" + seconds.ToString("00") + Environment.NewLine +
+            "Enemies killed: " + runLog.enemiesKilled + Environment.NewLine +
+            "XP gained: " + runLog.experienceGained + Environment.NewLine +
+            "Memory Shards gathered: " + runLog.memoryShardsGathered + Environment.NewLine +
+            Environment.NewLine;
+
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            File.AppendAllText(LastRunLogFilePath, entry, new UTF8Encoding(false));
+        }
+        catch (Exception exception)
+        {
+            if (GameUI.Instance != null)
+                GameUI.Instance.ShowNotification("Could not save ExpeditionLogs.txt: " + exception.Message);
+        }
     }
 
     public static bool TrySpendMasteryResource(int amount)
@@ -42,6 +150,87 @@ public static class GameProgression
         if (amount <= 0 || sessionProgress.masteryResourceBalance < amount) return false;
         sessionProgress.masteryResourceBalance -= amount;
         return true;
+    }
+
+    public static int GetWeaponTraitTier(string className)
+    {
+        ClassMasteryProgress mastery = FindClassMastery(className, false);
+        return mastery != null ? mastery.weaponTraitTier : 0;
+    }
+
+    public static int GetSkillTreeTier(string className)
+    {
+        ClassMasteryProgress mastery = FindClassMastery(className, false);
+        return mastery != null ? mastery.skillTreeTier : 0;
+    }
+
+    public static int GetWeaponTraitCost(string className)
+    {
+        return GetUpgradeCost(GetWeaponTraitTier(className), new int[] { 10, 15, 20 });
+    }
+
+    public static int GetSkillTreeCost(string className)
+    {
+        return GetUpgradeCost(GetSkillTreeTier(className), new int[] { 15, 25, 35 });
+    }
+
+    public static bool TryUpgradeWeaponTrait(string className)
+    {
+        int tier = GetWeaponTraitTier(className);
+        int cost = GetWeaponTraitCost(className);
+        if (string.IsNullOrEmpty(className) || !IsClassUnlocked(className) || cost < 0 || !TrySpendMasteryResource(cost))
+            return false;
+
+        FindClassMastery(className, true).weaponTraitTier = tier + 1;
+        return true;
+    }
+
+    public static bool TryUpgradeSkillTree(string className)
+    {
+        int tier = GetSkillTreeTier(className);
+        int cost = GetSkillTreeCost(className);
+        if (string.IsNullOrEmpty(className) || !IsClassUnlocked(className) || cost < 0 || !TrySpendMasteryResource(cost))
+            return false;
+
+        FindClassMastery(className, true).skillTreeTier = tier + 1;
+        return true;
+    }
+
+    public static float GetClassCooldownMultiplier(string className)
+    {
+        return Mathf.Max(0.7f, 1f - GetWeaponTraitTier(className) * 0.06f);
+    }
+
+    public static float GetClassSkillDamageMultiplier(string className)
+    {
+        return 1f + GetSkillTreeTier(className) * 0.1f;
+    }
+
+    static int GetUpgradeCost(int tier, int[] costs)
+    {
+        return tier < 0 || tier >= costs.Length ? -1 : costs[tier];
+    }
+
+    static bool IsClassUnlocked(string className)
+    {
+        foreach (string unlockedName in GetUnlockedClassNames())
+            if (unlockedName == className) return true;
+        return false;
+    }
+
+    static ClassMasteryProgress FindClassMastery(string className, bool create)
+    {
+        if (string.IsNullOrEmpty(className)) return null;
+        if (sessionProgress.classMastery == null)
+            sessionProgress.classMastery = new List<ClassMasteryProgress>();
+
+        foreach (ClassMasteryProgress mastery in sessionProgress.classMastery)
+            if (mastery != null && mastery.className == className) return mastery;
+
+        if (!create) return null;
+        ClassMasteryProgress created = new ClassMasteryProgress { className = className };
+        sessionProgress.classMastery.Add(created);
+        return created;
     }
 
     public static void RegisterClassAcquired(ClassData classData)

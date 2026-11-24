@@ -4,6 +4,9 @@ public static class SkillUtil
 {
     public static void DamageSphere(Vector3 center, float radius, float damage, GameObject ignore, bool targetPlayer = false)
     {
+        PlayerLoadout attacker = !targetPlayer && ignore != null ? ignore.GetComponent<PlayerLoadout>() : null;
+        if (attacker != null) damage = attacker.ScaleSkillDamage(damage);
+
         foreach (Collider hit in Physics.OverlapSphere(center, radius))
         {
             if (hit.gameObject == ignore) continue;

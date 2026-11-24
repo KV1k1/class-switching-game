@@ -24,4 +24,4 @@ MonoBehaviour:
   skill2: {fileID: 11400000, guid: 9e4d0af95ecafcd4d9e8d14a79cdfc1b, type: 2}
   skill3: {fileID: 11400000, guid: d10fd3f624768494daca0cbf4134d447, type: 2}
   landingFinisher: {fileID: 0}
-  jumpFinisher: {fileID: 0}
+  jumpFinisher: {fileID: 11400000, guid: 1f60abfbaca34509ab59c86793327737, type: 2}

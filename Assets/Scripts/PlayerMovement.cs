@@ -41,8 +41,10 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Left Click: Set movement destination to mouse location in world
-        if (Input.GetMouseButton(0) && !movementLocked)
+        InputScheme scheme = InputSchemeSettings.Current;
+
+        // Click-to-move uses the left mouse button to set a world-space destination.
+        if (scheme == InputScheme.ClickToMove && Input.GetMouseButton(0) && !movementLocked)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (groundPlane.Raycast(ray, out float enterDistance))
@@ -80,6 +82,17 @@ public class PlayerMovement : MonoBehaviour
             {
                 hasTarget = false; // Reached target position
             }
+        }
+
+        if (!movementLocked && scheme == InputScheme.Wasd)
+        {
+            hasTarget = false;
+            Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
+            if (input.sqrMagnitude > 1f) input.Normalize();
+            moveVelocity = input * speed;
+
+            if (input.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.LookRotation(input);
         }
 
         moveVelocity.y = verticalVelocity;

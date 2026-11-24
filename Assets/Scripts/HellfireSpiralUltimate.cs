@@ -58,7 +58,7 @@ public class HellfireSpiralUltimate : Skill
                 else
                 {
                     // Fallback to basic projectile if no VFX prefab is assigned
-                    Projectile.Spawn(spawnPos, dir, bulletSpeed, damage, new Color(1f, 0.4f, 0f));
+                    Projectile.Spawn(spawnPos, dir, bulletSpeed, damage, new Color(1f, 0.4f, 0f), false, user.gameObject);
                 }
             }
 

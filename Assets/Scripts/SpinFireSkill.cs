@@ -21,7 +21,7 @@ public class SpinFireSkill : Skill
 
         for (int i = 0; i < bullets; i++)
         {
-            Projectile.Spawn(p.position + p.forward * 0.8f, p.forward, bulletSpeed, damage, Color.magenta);
+            Projectile.Spawn(p.position + p.forward * 0.8f, p.forward, bulletSpeed, damage, Color.magenta, false, user.gameObject);
             p.Rotate(0, step, 0);
             yield return new WaitForSeconds(wait);
         }

@@ -20,6 +20,9 @@ public class EnemyChase : MonoBehaviour
     Animator anim;
     float nextAttack;
     bool attacking;
+    bool frozen;
+    Coroutine attackRoutine;
+    Coroutine freezeRoutine;
 
     void Awake()
     {
@@ -46,7 +49,7 @@ public class EnemyChase : MonoBehaviour
 
     void Update()
     {
-        if (health.IsDead || player == null || attacking) return;
+        if (health.IsDead || player == null || attacking || frozen) return;
 
         Vector3 target = new Vector3(player.position.x, transform.position.y, player.position.z);
         float dist = Vector3.Distance(transform.position, target);
@@ -56,7 +59,7 @@ public class EnemyChase : MonoBehaviour
             transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
 
         if (dist <= attackRange && Time.time >= nextAttack)
-            StartCoroutine(Attack());
+            attackRoutine = StartCoroutine(Attack());
     }
 
     IEnumerator Attack()
@@ -79,6 +82,35 @@ public class EnemyChase : MonoBehaviour
         Play("Run");
         nextAttack = Time.time + attackCooldown;
         attacking = false;
+        attackRoutine = null;
+    }
+
+    public void FreezeFor(float duration)
+    {
+        if (health == null || health.IsDead || duration <= 0f) return;
+
+        if (attackRoutine != null)
+        {
+            StopCoroutine(attackRoutine);
+            attackRoutine = null;
+        }
+        attacking = false;
+
+        if (freezeRoutine != null) StopCoroutine(freezeRoutine);
+        freezeRoutine = StartCoroutine(FreezeRoutine(duration));
+    }
+
+    IEnumerator FreezeRoutine(float duration)
+    {
+        frozen = true;
+        Tint(new Color(0.35f, 0.85f, 1f));
+        if (anim != null) anim.speed = 0f;
+        yield return new WaitForSeconds(duration);
+        frozen = false;
+        if (anim != null) anim.speed = 1f;
+        Restore();
+        Play("Run");
+        freezeRoutine = null;
     }
 
     void OnAnyDied(Health who)
@@ -92,6 +124,7 @@ public class EnemyChase : MonoBehaviour
     {
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;   // can't be hit or bumped any more
+        if (anim != null) anim.speed = 1f;
         Restore();
         Play("Death");
         yield return new WaitForSeconds(deathLinger);

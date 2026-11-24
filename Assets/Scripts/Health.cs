@@ -5,6 +5,8 @@ public class Health : MonoBehaviour
 {
     public float maxHealth = 50f;
     public bool destroyOnDeath = true;
+    public int experienceReward = 5;
+    public int masteryResourceReward = 1;
 
     public float Current { get; private set; }
     public bool IsDead { get; private set; }

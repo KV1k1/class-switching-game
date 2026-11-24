@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerHealth : Health
 {
@@ -15,6 +16,8 @@ public class PlayerHealth : Health
         destroyOnDeath = false;   // the player stays in the scene when dead
         movement = GetComponent<PlayerMovement>();
         animator = GetComponentInChildren<Animator>();
+        if (GetComponent<PlayerExperience>() == null)
+            gameObject.AddComponent<PlayerExperience>();
     }
 
     void OnEnable()  { AnyDied += OnSomethingDied; }
@@ -37,7 +40,13 @@ public class PlayerHealth : Health
         {
             GetComponent<PlayerLoadout>().enabled = false;
             movement.enabled = false;
-            GameUI.Instance.ShowEnd("YOU DIED", "Press R to restart", new Color(0.8f, 0.1f, 0.1f));
+            string deathSummary = "Press R to restart";
+            if (SceneManager.GetActiveScene().name == "SampleScene")
+            {
+                ExpeditionRunLog runLog = GameProgression.FinishRunLog(false);
+                deathSummary = runLog.ToDisplayString() + "\nRun failed — press R to restart";
+            }
+            GameUI.Instance.ShowEnd("YOU DIED", deathSummary, new Color(0.8f, 0.1f, 0.1f));
             Time.timeScale = 0f;
         }
         else if (!movement.movementLocked && animator != null &&

@@ -6,9 +6,10 @@ public class SmokeZone : MonoBehaviour
     ParticleSystem ps;
     GameObject disc;
     GameObject customVfxInstance;
+    GameObject owner;
     bool ending;
 
-    public static void Spawn(Vector3 center, float radius, float damagePerTick, float duration, float tickRate, GameObject customVfxPrefab = null)
+    public static void Spawn(Vector3 center, float radius, float damagePerTick, float duration, float tickRate, GameObject customVfxPrefab = null, GameObject owner = null)
     {
         GameObject go = new GameObject("Smoke Zone");
         go.transform.position = new Vector3(center.x, 0f, center.z);
@@ -79,6 +80,7 @@ public class SmokeZone : MonoBehaviour
         s.ps = psComponent;
         s.disc = disc;
         s.customVfxInstance = vfxInstance;
+        s.owner = owner;
     }
 
     void Update()
@@ -98,7 +100,7 @@ public class SmokeZone : MonoBehaviour
         if (Time.time >= nextTick)
         {
             nextTick = Time.time + tickRate;
-            SkillUtil.DamageSphere(transform.position, radius, damage, null);
+            SkillUtil.DamageSphere(transform.position, radius, damage, owner);
         }
     }
 }

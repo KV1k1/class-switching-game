@@ -24,7 +24,7 @@ public class BulletBarrageSkill : Skill
         {
             float angle = Random.Range(-coneAngle * 0.5f, coneAngle * 0.5f);
             Vector3 dir = Quaternion.Euler(0, angle, 0) * p.forward;
-            Projectile.Spawn(p.position + dir * 0.8f, dir, bulletSpeed, damage, Color.cyan);
+            Projectile.Spawn(p.position + dir * 0.8f, dir, bulletSpeed, damage, Color.cyan, false, user.gameObject);
 
             yield return new WaitForSeconds(interval);
             elapsed += interval;

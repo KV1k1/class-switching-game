@@ -5,6 +5,10 @@ using UnityEngine;
 public class BossAI : MonoBehaviour
 {
     public string bossName = "THE GUARDIAN";
+    [Header("Visuals")]
+    public GameObject bossVisualPrefab;
+    public Vector3 bossVisualScale = Vector3.one * 1.5f;
+    public RuntimeAnimatorController bossAnimatorController;
     public float speed = 2.5f;
     public float wakeRadius = 12f;
     public float stopDistance = 3.5f;
@@ -25,6 +29,8 @@ public class BossAI : MonoBehaviour
 
     [Header("Rewards")]
     public ClassData classToUnlock; // Assign the Mage ClassData in the Inspector
+    public int experienceReward = 100;
+    public int masteryResourceReward = 25;
 
     Health health;
     Transform player;
@@ -38,6 +44,25 @@ public class BossAI : MonoBehaviour
     {
         health = GetComponent<Health>();
         health.destroyOnDeath = false; //[cite: 12]
+        health.experienceReward = experienceReward;
+        health.masteryResourceReward = masteryResourceReward;
+
+        // Keep this encounter controller in the scene for the timed spawner,
+        // and attach the imported character as its visible, animated model.
+        if (bossVisualPrefab != null)
+        {
+            GameObject bossVisual = Instantiate(bossVisualPrefab, transform);
+            bossVisual.name = "Warrok - First Expedition Boss";
+            bossVisual.transform.localPosition = Vector3.zero;
+            bossVisual.transform.localRotation = Quaternion.identity;
+            bossVisual.transform.localScale = bossVisualScale;
+            anim = bossVisual.GetComponentInChildren<Animator>();
+            if (anim != null && bossAnimatorController != null)
+                anim.runtimeAnimatorController = bossAnimatorController;
+        }
+
+        MeshRenderer placeholderRenderer = GetComponent<MeshRenderer>();
+        if (placeholderRenderer != null) placeholderRenderer.enabled = false;
     }
 
     void OnEnable() { Health.AnyDied += OnAnyDied; } //[cite: 12]
@@ -45,15 +70,37 @@ public class BossAI : MonoBehaviour
 
     void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform; //[cite: 12]
-        rend = GetComponentInChildren<Renderer>(); //[cite: 12]
-        originalColor = rend.material.color; //[cite: 12]
-        anim = GetComponentInChildren<Animator>(); //[cite: 12]
-        if (anim != null) anim.speed = 0f;   // frozen until it wakes up[cite: 12]
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (player == null && playerObject != null) player = playerObject.transform;
+        if (rend == null) rend = FindBossRenderer();
+        if (rend != null) originalColor = rend.material.color;
+        if (anim == null) anim = GetComponentInChildren<Animator>();
+        if (anim != null && !awake) anim.speed = 0f;   // frozen until it wakes up
         health.Damaged += OnHit; //[cite: 12]
     }
 
+    public void BeginEncounter(Transform playerTarget)
+    {
+        if (playerTarget != null) player = playerTarget;
+        if (health == null) health = GetComponent<Health>();
+        if (rend == null) rend = FindBossRenderer();
+        if (rend != null) originalColor = rend.material.color;
+        if (anim == null) anim = GetComponentInChildren<Animator>();
+
+        awake = false;
+        Wake();
+    }
+
     void OnHit(float amount) { Wake(); } //[cite: 12]
+
+    Renderer FindBossRenderer()
+    {
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer candidate in renderers)
+            if (candidate != null && candidate.enabled && candidate.gameObject != gameObject)
+                return candidate;
+        return GetComponent<Renderer>();
+    }
 
     void Wake()
     {
@@ -61,7 +108,7 @@ public class BossAI : MonoBehaviour
         awake = true; //[cite: 12]
         if (anim != null) anim.speed = 1f; //[cite: 12]
         nextAttack = Time.time + 1.5f; //[cite: 12]
-        GameUI.Instance.ShowBossBar(bossName, health); //[cite: 12]
+        if (GameUI.Instance != null) GameUI.Instance.ShowBossBar(bossName, health); //[cite: 12]
     }
 
     void Update()
@@ -150,18 +197,18 @@ public class BossAI : MonoBehaviour
 
     IEnumerator Die()
     {
+        GameProgression.MarkFirstBossDefeated();
         GameUI.Instance.HideBossBar();
         if (anim != null) anim.speed = 0f;
 
         // 1. Unlock the class and show the unlock notification
-        if (classToUnlock != null && player != null)
+        PlayerLoadout currentLoadout = player != null ? player.GetComponent<PlayerLoadout>() : null;
+        bool alreadyEquippedReward = currentLoadout != null &&
+            System.Array.IndexOf(currentLoadout.classes, classToUnlock) >= 0;
+        if (classToUnlock != null && player != null && !alreadyEquippedReward)
         {
-            PlayerLoadout loadout = player.GetComponent<PlayerLoadout>();
-            if (loadout != null)
-            {
-                loadout.UnlockClass(classToUnlock);
-                GameUI.Instance.ShowNotification($"UNLOCKED: {classToUnlock.className}!\nPress Q to switch");
-            }
+            DroppedClassPickup.Spawn(classToUnlock, transform.position);
+            GameUI.Instance.ShowNotification($"DROPPED: {classToUnlock.className}!\nMove close and press E to collect");
         }
 
         // 2. Shrink the boss away in real-time
@@ -178,21 +225,38 @@ public class BossAI : MonoBehaviour
         yield return new WaitForSeconds(3.5f);
 
         // 4. Trigger the final wave countdown safely
+        Transform runPlayer = player;
         EnemySpawner spawner = FindFirstObjectByType<EnemySpawner>();
         if (spawner != null)
         {
-            spawner.SpawnFinalWave(20, 1.5f, () =>
-            {
-                GameUI.Instance.ShowEnd("VICTORY!", "Press R to play again", new Color(0.2f, 1f, 0.3f));
-                Time.timeScale = 0f;
-            });
+            spawner.SpawnFinalWave(20, 1.5f, () => CompleteRun(runPlayer));
         }
         else
         {
-            GameUI.Instance.ShowEnd("VICTORY!", "Press R to play again", new Color(0.2f, 1f, 0.3f));
-            Time.timeScale = 0f;
+            CompleteRun(runPlayer);
         }
 
         Destroy(gameObject);
+    }
+
+    static void CompleteRun(Transform runPlayer)
+    {
+        ExpeditionRunLog runLog = GameProgression.FinishRunLog(true);
+        PlayerLoadout loadout = runPlayer != null ? runPlayer.GetComponent<PlayerLoadout>() : null;
+        PlayerExperience experience = runPlayer != null ? runPlayer.GetComponent<PlayerExperience>() : null;
+        int returnedMasteryResource = GameProgression.SaveCompletedRun(
+            loadout != null ? loadout.classes : null,
+            experience != null ? experience.currentLevel : 1);
+        runLog.memoryShardsBanked = returnedMasteryResource;
+
+        bool archivistRescued = GameProgression.RecruitArchivistAfterCompletedExpedition();
+        WorldPortal returnPortal = null;
+        if (runPlayer != null)
+            returnPortal = WorldPortal.SpawnHubReturn(new Vector3(0f, 0f, 0f));
+        if (archivistRescued && returnPortal != null)
+            ArchivistNpcController.SpawnAtReturnPortal(returnPortal.transform.position, runPlayer);
+
+        if (GameUI.Instance != null)
+            GameUI.Instance.ShowExpeditionReport(runLog, archivistRescued);
     }
 }

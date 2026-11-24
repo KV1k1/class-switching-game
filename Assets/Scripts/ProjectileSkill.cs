@@ -10,7 +10,7 @@ public class ProjectileSkill : Skill
     public override IEnumerator Use(PlayerLoadout user)
     {
         Transform p = user.transform;
-        Projectile.Spawn(p.position + p.forward * 0.8f, p.forward, speed, damage, Color.yellow);
+        Projectile.Spawn(p.position + p.forward * 0.8f, p.forward, speed, damage, Color.yellow, false, user.gameObject);
         yield break;
     }
 }

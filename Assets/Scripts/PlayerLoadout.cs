@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerLoadout : MonoBehaviour
 {
     public ClassData[] classes;
+    public int maxClassSlots = 3;
     public float switchDelay = 0.3f;
     public Animator modelAnimator;
 
@@ -13,6 +15,11 @@ public class PlayerLoadout : MonoBehaviour
     public float flashIntensity = 2f;
 
     public bool comboWindowOpen;
+    public ClassData LastSwitchedFrom { get; private set; }
+    public ClassData LastSwitchedTo { get; private set; }
+    bool gunnerJumpComboActive;
+    ClassData gunnerJumpSourceClass;
+    ClassData gunnerJumpTargetClass;
 
     int active;
     float nextSwitchTime;
@@ -43,15 +50,27 @@ public class PlayerLoadout : MonoBehaviour
 
     void Start()
     {
+        if (SceneManager.GetActiveScene().name == "SampleScene")
+            GameProgression.BeginRun();
+        classes = GameProgression.RestoreEquippedClasses(classes, maxClassSlots);
+        cooldownReady = new float[classes.Length, 4];
         ApplyClass(false);
     }
 
     void Update()
     {
+        if (Time.timeScale == 0f) return;
+
         // Race/Class Swap: Q
-        if (Input.GetKeyDown(KeyCode.Q) && Time.time >= nextSwitchTime)
+        if (Input.GetKeyDown(KeyCode.Q) && (Time.time >= nextSwitchTime || comboWindowOpen))
         {
+            LastSwitchedFrom = CurrentClass;
             active = (active + 1) % classes.Length;
+            LastSwitchedTo = CurrentClass;
+            if (gunnerJumpComboActive && LastSwitchedFrom == gunnerJumpSourceClass)
+            {
+                gunnerJumpTargetClass = LastSwitchedTo;
+            }
             nextSwitchTime = Time.time + switchDelay;
             comboWindowOpen = false;
             ApplyClass(true);
@@ -62,8 +81,9 @@ public class PlayerLoadout : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha2)) TryUseSkill(1);
         if (Input.GetKeyDown(KeyCode.Alpha3)) TryUseSkill(2); // Ultimate Skill
 
-        // Auto Attack: Right Click (RMB)
-        if (Input.GetMouseButton(1)) TryUseSkill(3);
+        // Scheme 1 attacks with right click; scheme 2 attacks with left click.
+        int attackButton = InputSchemeSettings.Current == InputScheme.ClickToMove ? 1 : 0;
+        if (Input.GetMouseButton(attackButton)) TryUseSkill(3);
     }
 
     void ApplyClass(bool glint)
@@ -118,7 +138,12 @@ public class PlayerLoadout : MonoBehaviour
     public float GetCooldownDuration(int slot)
     {
         Skill s = GetSkill(slot);
-        return s == null ? 0f : s.cooldown;
+        return s == null ? 0f : s.cooldown * GameProgression.GetClassCooldownMultiplier(CurrentClass.className);
+    }
+
+    public float ScaleSkillDamage(float damage)
+    {
+        return damage * GameProgression.GetClassSkillDamageMultiplier(CurrentClass.className);
     }
 
     public void PlaySkillAnim(Skill s)
@@ -138,26 +163,67 @@ public class PlayerLoadout : MonoBehaviour
         // Turn character to face mouse location instantly before executing attack
         if (movement != null) movement.FaceMouse();
 
-        cooldownReady[active, slot] = Time.time + skill.cooldown;
+        cooldownReady[active, slot] = Time.time + GetCooldownDuration(slot);
         PlaySkillAnim(skill);
         StartCoroutine(skill.Use(this));
     }
 
-    public void UnlockClass(ClassData newClass)
+    public bool AcquireClass(ClassData newClass)
     {
-        List<ClassData> currentClasses = new List<ClassData>(classes);
-        if (currentClasses.Contains(newClass)) return;
-        currentClasses.Add(newClass);
-        classes = currentClasses.ToArray();
+        if (newClass == null || System.Array.IndexOf(classes, newClass) >= 0)
+            return false;
 
-        float[,] newCooldowns = new float[classes.Length, 4];
-        for (int c = 0; c < classes.Length - 1; c++)
+        if (classes.Length < maxClassSlots)
         {
-            for (int s = 0; s < 4; s++)
-            {
-                newCooldowns[c, s] = cooldownReady[c, s];
-            }
+            int previousCount = classes.Length;
+            System.Array.Resize(ref classes, previousCount + 1);
+            classes[previousCount] = newClass;
+            ResizeCooldowns(previousCount);
+            active = previousCount;
+        }
+        else
+        {
+            ClassData droppedClass = classes[active];
+            classes[active] = newClass;
+            for (int slot = 0; slot < 4; slot++) cooldownReady[active, slot] = 0f;
+
+            if (droppedClass != null)
+                DroppedClassPickup.Spawn(droppedClass, transform.position + transform.right * 3.5f);
+        }
+
+        nextSwitchTime = Time.time + switchDelay;
+        comboWindowOpen = false;
+        GameProgression.RegisterClassAcquired(newClass);
+        ApplyClass(true);
+        if (GameUI.Instance != null)
+            GameUI.Instance.ShowNotification($"EQUIPPED: {newClass.className}!\nPress Q to switch classes");
+        return true;
+    }
+
+    void ResizeCooldowns(int previousCount)
+    {
+        float[,] newCooldowns = new float[classes.Length, 4];
+        for (int classIndex = 0; classIndex < previousCount; classIndex++)
+        {
+            for (int skillIndex = 0; skillIndex < 4; skillIndex++)
+                newCooldowns[classIndex, skillIndex] = cooldownReady[classIndex, skillIndex];
         }
         cooldownReady = newCooldowns;
+    }
+
+    public void BeginGunnerJumpCombo(ClassData sourceClass)
+    {
+        gunnerJumpComboActive = true;
+        gunnerJumpSourceClass = sourceClass;
+        gunnerJumpTargetClass = null;
+    }
+
+    public ClassData EndGunnerJumpCombo()
+    {
+        gunnerJumpComboActive = false;
+        gunnerJumpSourceClass = null;
+        ClassData targetClass = gunnerJumpTargetClass;
+        gunnerJumpTargetClass = null;
+        return targetClass;
     }
 }
